@@ -1,0 +1,7 @@
+{
+  "approved": true,
+  "source": "Copied from the user-selected canonical modern shoe-store direction comp generated during the Impeccable decision round.",
+  "role": "Approved spatial north-star for the GutShoes storefront implementation.",
+  "literalize": ["utility header", "split product hero", "activity category rail", "four-column product shelf"],
+  "doNotLiteralize": ["invented product names", "invented prices", "unsupported commercial claims"]
+}

@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Build output
+dist/
+apps/*/dist/
+apps/*/build/
+apps/backend/public/build/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+apps/*/.env
+apps/*/.env.*
+!apps/*/.env.example
+
+# Laravel runtime
+apps/backend/storage/*.key
+apps/backend/storage/framework/cache/data/*
+apps/backend/storage/framework/sessions/*
+apps/backend/storage/framework/views/*
+apps/backend/storage/logs/*
+apps/backend/bootstrap/cache/*.php
+
+# Tests and tooling
+coverage/
+.phpunit.result.cache
+.eslintcache
+
+# Editor and OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
+
+.impeccable/chrome-qa/

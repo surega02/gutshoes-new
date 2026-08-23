@@ -1,0 +1,43 @@
+{
+  "title": "Pilih dunia visual GutShoes",
+  "question": "Pilih arah yang paling tepat untuk membuat harga terasa jelas, pilihan sepatu mudah dibandingkan, dan pembelian tetap meyakinkan.",
+  "options": [
+    {
+      "id": "assigned",
+      "label": "Kartu Stok Lapangan",
+      "kicker": "THE ROLL",
+      "lineage": "kartu stok gudang, label rak, dan papan perlengkapan olahraga",
+      "thesis": "Storefront bekerja seperti ruang stok olahraga yang rapi: harga, ukuran, dan ketersediaan terbaca sebelum dekorasi.",
+      "palette": ["#071A2B", "#0AAED1", "#EAF8FB", "#FFB000", "#FFFFFF"],
+      "materials": ["label stok berlapis", "garis ukur lapangan", "aksen krom biru dari logo"],
+      "viewport": "Logo berada di bar utilitas ringkas, satu sepatu unggulan tampil besar di atas bidang kartu stok, sementara harga, pilihan ukuran, dan CTA membeli membentuk satu lintasan baca tanpa terputus.",
+      "risk": "Dapat terasa terlalu utilitarian bila foto produk dan ritme ruang tidak diberi skala editorial.",
+      "comp": ".impeccable/mocks/decision/assigned.png"
+    },
+    {
+      "id": "model-pick",
+      "label": "Papan Skor Harga",
+      "kicker": "IMPECCABLE’S PICK",
+      "lineage": "scoreboard arena, papan jadwal pertandingan, dan grafis siaran olahraga",
+      "thesis": "Harga dan nilai menjadi skor utama, dengan produk hadir seperti pilihan pertandingan yang mudah dipahami siapa pun.",
+      "palette": ["#061525", "#087DFF", "#04D9D2", "#F4FAFF", "#FFCB45"],
+      "materials": ["angka scoreboard", "panel arena", "garis gerak siaran olahraga"],
+      "viewport": "Satu sepatu hero melintasi papan skor harga, kategori olahraga menjadi jalur cepat, dan tombol Belanja Sekarang menempel pada panel nilai paling terang.",
+      "risk": "Lebih familier dan mudah diterima, tetapi bisa mendekati bahasa promosi ritel olahraga bila eksekusinya generik.",
+      "comp": ".impeccable/mocks/decision/model-pick.png"
+    }
+  ],
+  "reroll": {"registers": ["safer", "bolder"]},
+  "buildPath": {"value": "comp", "toggle": true},
+  "canon": true,
+  "canonCard": {
+    "label": "Standar toko sepatu modern",
+    "thesis": "Grid produk bersih, promo besar, filter familiar, dan fotografi katalog dieksekusi dengan sangat rapi.",
+    "palette": ["#FFFFFF", "#111827", "#0AAED1", "#F3F4F6"],
+    "materials": ["grid e-commerce bersih", "fotografi produk", "kartu putih"],
+    "viewport": "Header konvensional, hero promosi, kategori populer, lalu grid produk dengan harga dan CTA.",
+    "risk": "Sangat mudah digunakan, tetapi secara sengaja sulit dibedakan dari kompetitor.",
+    "comp": ".impeccable/mocks/decision/canon.png"
+  },
+  "steer": true
+}

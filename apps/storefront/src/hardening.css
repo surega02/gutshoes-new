@@ -1,0 +1,37 @@
+.utility button:disabled,
+.size-heading button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.size-filter button {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.size-filter button.active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+.product-name-button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  font: inherit;
+  font-weight: inherit;
+}
+
+.footer-pending {
+  color: #7f909a;
+  font-size: .85rem;
+}
+
+.button:disabled {
+  opacity: .62;
+  transform: none;
+  box-shadow: none;
+}

@@ -1,0 +1,132 @@
+.main-focus:focus {
+  outline: none;
+}
+
+.login-error-demo {
+  align-self: center;
+  margin-top: .5rem;
+  font-size: .8rem;
+}
+
+.account-nav {
+  scrollbar-width: none;
+}
+
+.account-nav::-webkit-scrollbar {
+  display: none;
+}
+
+@media (min-width: 761px) and (max-width: 1050px) {
+  .utility .account-avatar {
+    display: grid;
+  }
+}
+
+@media (min-width: 601px) and (max-width: 1100px) {
+  .account-page {
+    padding: 2.5rem 2rem 6rem;
+    background: linear-gradient(180deg, var(--soft) 0, var(--soft) 170px, #fff 170px);
+  }
+
+  .account-head {
+    margin-bottom: 2rem;
+  }
+
+  .account-head h1 {
+    font-size: clamp(2.5rem, 5vw, 3.25rem);
+  }
+
+  .account-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2.25rem;
+  }
+
+  .account-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    border-top: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .account-nav button {
+    flex: 1 0 auto;
+    min-width: 120px;
+    min-height: 56px;
+    justify-content: center;
+    border-bottom: 0;
+    padding-inline: 1rem;
+  }
+
+  .account-nav button .icon {
+    display: none;
+  }
+
+  .account-nav .logout-link {
+    flex-grow: .65;
+    min-width: 96px;
+    margin-top: 0;
+    justify-content: center;
+  }
+
+  .account-content {
+    width: min(100%, 800px);
+    margin-inline: auto;
+  }
+
+  .profile-form {
+    max-width: none;
+  }
+}
+
+.nav button:first-child:not(.active) {
+  color: inherit;
+  font-weight: 400;
+}
+
+.nav button:first-child:not(.active)::after {
+  display: none;
+}
+
+.nav button.active {
+  color: var(--cyan-dark);
+  font-weight: 700;
+}
+
+.nav button.active::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: var(--cyan);
+}
+
+.confirm-dialog {
+  width: min(92vw, 520px);
+  border: 0;
+  border-radius: 14px;
+  padding: 1.5rem;
+  color: var(--ink);
+  box-shadow: 0 22px 65px rgba(7, 31, 45, .22);
+}
+
+.confirm-dialog::backdrop {
+  background: rgba(11, 24, 33, .55);
+}
+
+.confirm-dialog > strong {
+  font-size: 1.25rem;
+}
+
+.confirm-dialog > p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.confirm-dialog > div {
+  display: flex;
+  justify-content: flex-end;
+  gap: .7rem;
+  margin-top: 1.5rem;
+}
