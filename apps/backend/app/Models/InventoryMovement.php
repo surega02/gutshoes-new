@@ -3,10 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use LogicException;
 
 class InventoryMovement extends Model
 {
     protected $guarded = [];
 
-    protected $table = 'inventory_movements';
+    protected static function booted(): void
+    {
+        static::updating(fn () => throw new LogicException('Inventory movements are immutable.'));
+        static::deleting(fn () => throw new LogicException('Inventory movements are immutable.'));
+    }
 }
