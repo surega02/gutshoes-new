@@ -3,11 +3,13 @@
 use App\Http\Controllers\Api\V1\AddressController;
 use App\Http\Controllers\Api\V1\AdminBrandController;
 use App\Http\Controllers\Api\V1\AdminCategoryController;
+use App\Http\Controllers\Api\V1\AdminFulfillmentController;
 use App\Http\Controllers\Api\V1\AdminProductController;
 use App\Http\Controllers\Api\V1\AdminSizeController;
 use App\Http\Controllers\Api\V1\CartController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\CheckoutQuoteController;
+use App\Http\Controllers\Api\V1\CustomerOrderController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\ProfileController;
@@ -19,6 +21,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
     Route::get('/products', [CatalogController::class, 'index']);
     Route::get('/products/{slug}', [CatalogController::class, 'show']);
     Route::post('/payments/midtrans/webhook', [PaymentController::class, 'webhook'])->middleware('throttle:webhooks');
+    Route::post('/orders/track', [CustomerOrderController::class, 'track'])->middleware('throttle:tracking');
 
     Route::middleware('web')->group(function (): void {
         Route::get('/cart', [CartController::class, 'show']);
@@ -35,7 +38,10 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
             Route::get('/profile', [ProfileController::class, 'show']);
             Route::put('/profile', [ProfileController::class, 'update']);
             Route::apiResource('addresses', AddressController::class);
+            Route::get('/orders', [CustomerOrderController::class, 'index']);
+            Route::get('/orders/{orderNumber}', [CustomerOrderController::class, 'show']);
             Route::prefix('admin')->middleware('admin')->group(function (): void {
+                Route::patch('/orders/{order}/fulfillment', [AdminFulfillmentController::class, 'update']);
                 Route::apiResource('brands', AdminBrandController::class);
                 Route::apiResource('categories', AdminCategoryController::class);
                 Route::apiResource('sizes', AdminSizeController::class)->except('show');

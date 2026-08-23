@@ -7,6 +7,7 @@ use App\Domain\Promotion\PricingService;
 use App\Domain\Shipping\ShippingProvider;
 use App\Domain\Shipping\ShippingQuote;
 use App\Enums\OrderStatus;
+use App\Jobs\SendOrderEmail;
 use App\Models\Cart;
 use App\Models\Inventory;
 use App\Models\Order;
@@ -14,6 +15,7 @@ use App\Models\Voucher;
 use App\Models\VoucherUsage;
 use App\Models\Warehouse;
 use DomainException;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -80,6 +82,7 @@ class CreateOrderService
                 VoucherUsage::create(['voucher_id' => $voucher->id, 'user_id' => $cart->user_id, 'order_id' => $order->id, 'discount_amount' => $totals['voucher_discount']]);
             }
             $cart->update(['status' => 'CONVERTED']);
+            Bus::dispatch(new SendOrderEmail($order->id, 'order_created'));
 
             return new CreateOrderResult($this->loaded($order), true);
         }, 3);

@@ -190,6 +190,31 @@ paths:
       responses:
         '200': { description: Event diterima atau sudah pernah diproses }
         '401': { description: Signature tidak valid }
+  /orders/track:
+    post:
+      summary: Melacak guest order dengan nomor order dan email
+      tags: [Orders]
+      responses: { '200': { description: Status dan timeline order }, '404': { description: Kombinasi tidak cocok }, '429': { description: Rate limited } }
+  /orders:
+    get:
+      summary: Riwayat order customer aktif
+      tags: [Orders]
+      security: [{ sanctum: [] }]
+      responses: { '200': { description: Order milik customer }, '401': { description: Unauthenticated } }
+  /orders/{orderNumber}:
+    get:
+      summary: Detail order milik customer aktif
+      tags: [Orders]
+      security: [{ sanctum: [] }]
+      parameters:
+        - { in: path, name: orderNumber, required: true, schema: { type: string } }
+      responses: { '200': { description: Detail order }, '404': { description: Bukan milik customer } }
+  /admin/orders/{order}/fulfillment:
+    patch:
+      summary: Transisi fulfillment berurutan
+      tags: [Admin Orders]
+      security: [{ sanctum: [] }]
+      responses: { '200': { description: Status diperbarui }, '403': { description: Admin required }, '422': { description: Transisi tidak valid } }
 components:
   securitySchemes:
     sanctum:

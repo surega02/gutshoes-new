@@ -5,11 +5,13 @@ namespace App\Domain\Payment;
 use App\Domain\Inventory\InventoryService;
 use App\Enums\OrderStatus;
 use App\Enums\ReservationStatus;
+use App\Jobs\SendOrderEmail;
 use App\Models\InventoryReservation;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\PaymentWebhook;
 use DomainException;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 
 class ProcessMidtransWebhook
@@ -53,6 +55,7 @@ class ProcessMidtransWebhook
                 }
                 $order->update(['status' => OrderStatus::PAID->value]);
                 $order->statusHistories()->create(['from_status' => OrderStatus::PENDING_PAYMENT->value, 'to_status' => OrderStatus::PAID->value, 'note' => 'Midtrans payment confirmed']);
+                Bus::dispatch(new SendOrderEmail($order->id, 'payment_success'));
             } elseif (in_array($status, ['expire', 'cancel', 'deny'], true) && $order->getRawOriginal('status') === OrderStatus::PENDING_PAYMENT->value) {
                 $payment->update(['status' => strtoupper($status), 'provider_transaction_id' => $payload['transaction_id'] ?? $payment->provider_transaction_id]);
                 foreach (InventoryReservation::where('order_id', $order->id)->where('status', ReservationStatus::ACTIVE->value)->get() as $reservation) {
@@ -60,6 +63,7 @@ class ProcessMidtransWebhook
                 }
                 $order->update(['status' => OrderStatus::EXPIRED->value]);
                 $order->statusHistories()->create(['from_status' => OrderStatus::PENDING_PAYMENT->value, 'to_status' => OrderStatus::EXPIRED->value, 'note' => 'Midtrans payment expired']);
+                Bus::dispatch(new SendOrderEmail($order->id, 'payment_expired'));
             }
             $event->update(['processed_at' => now()]);
 
