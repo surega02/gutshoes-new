@@ -3,6 +3,7 @@
 use App\Domain\Order\IdempotencyConflict;
 use App\Domain\Payment\InvalidWebhookSignature;
 use App\Http\Middleware\AssignRequestId;
+use App\Http\Middleware\AuditAdminMutation;
 use App\Http\Middleware\EnsureAdmin;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
@@ -24,7 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
-        $middleware->alias(['admin' => EnsureAdmin::class]);
+        $middleware->alias(['admin' => EnsureAdmin::class, 'audit.admin' => AuditAdminMutation::class]);
         $middleware->append(AssignRequestId::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

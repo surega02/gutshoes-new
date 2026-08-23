@@ -229,6 +229,36 @@ paths:
       tags: [Admin Refunds]
       security: [{ sanctum: [] }]
       responses: { '200': { description: Status refund terkini }, '403': { description: Admin required } }
+  /admin/dashboard:
+    get:
+      summary: Dashboard operasional, revenue, dan low stock
+      tags: [Admin Operations]
+      security: [{ sanctum: [] }]
+      responses: { '200': { description: Ringkasan operasional }, '403': { description: Admin required } }
+  /admin/orders:
+    get:
+      summary: Daftar order terfilter, tersortir, dan terpaginasikan
+      tags: [Admin Operations]
+      security: [{ sanctum: [] }]
+      responses: { '200': { description: Orders } }
+  /admin/inventories:
+    get:
+      summary: Daftar inventory lintas warehouse
+      tags: [Admin Operations]
+      security: [{ sanctum: [] }]
+      responses: { '200': { description: Inventories } }
+  /admin/inventories/{inventory}/adjust:
+    patch:
+      summary: Penyesuaian stok tercatat
+      tags: [Admin Operations]
+      security: [{ sanctum: [] }]
+      responses: { '200': { description: Inventory adjusted }, '422': { description: Invariant violation } }
+  /admin/configurations/{key}:
+    put:
+      summary: Menyimpan konfigurasi toko dan low-stock threshold
+      tags: [Admin Operations]
+      security: [{ sanctum: [] }]
+      responses: { '200': { description: Configuration saved } }
 components:
   securitySchemes:
     sanctum:

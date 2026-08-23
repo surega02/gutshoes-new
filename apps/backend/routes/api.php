@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AddressController;
 use App\Http\Controllers\Api\V1\AdminBrandController;
 use App\Http\Controllers\Api\V1\AdminCategoryController;
 use App\Http\Controllers\Api\V1\AdminFulfillmentController;
+use App\Http\Controllers\Api\V1\AdminOperationsController;
 use App\Http\Controllers\Api\V1\AdminProductController;
 use App\Http\Controllers\Api\V1\AdminSizeController;
 use App\Http\Controllers\Api\V1\CancellationRefundController;
@@ -42,7 +43,26 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
             Route::apiResource('addresses', AddressController::class);
             Route::get('/orders', [CustomerOrderController::class, 'index']);
             Route::get('/orders/{orderNumber}', [CustomerOrderController::class, 'show']);
-            Route::prefix('admin')->middleware('admin')->group(function (): void {
+            Route::prefix('admin')->middleware(['admin', 'audit.admin'])->group(function (): void {
+                Route::get('/dashboard', [AdminOperationsController::class, 'dashboard']);
+                Route::get('/orders', [AdminOperationsController::class, 'orders']);
+                Route::get('/payments', [AdminOperationsController::class, 'payments']);
+                Route::get('/shipments', [AdminOperationsController::class, 'shipments']);
+                Route::get('/cancellations', [AdminOperationsController::class, 'cancellations']);
+                Route::get('/refunds', [AdminOperationsController::class, 'refunds']);
+                Route::get('/customers', [AdminOperationsController::class, 'customers']);
+                Route::get('/promotions', [AdminOperationsController::class, 'promotions']);
+                Route::post('/promotions', [AdminOperationsController::class, 'savePromotion']);
+                Route::put('/promotions/{promotion}', [AdminOperationsController::class, 'savePromotion']);
+                Route::delete('/promotions/{promotion}', [AdminOperationsController::class, 'deletePromotion']);
+                Route::get('/vouchers', [AdminOperationsController::class, 'vouchers']);
+                Route::post('/vouchers', [AdminOperationsController::class, 'saveVoucher']);
+                Route::put('/vouchers/{voucher}', [AdminOperationsController::class, 'saveVoucher']);
+                Route::delete('/vouchers/{voucher}', [AdminOperationsController::class, 'deleteVoucher']);
+                Route::get('/inventories', [AdminOperationsController::class, 'inventories']);
+                Route::patch('/inventories/{inventory}/adjust', [AdminOperationsController::class, 'adjustInventory']);
+                Route::get('/configurations', [AdminOperationsController::class, 'configurations']);
+                Route::put('/configurations/{key}', [AdminOperationsController::class, 'updateConfiguration']);
                 Route::patch('/orders/{order}/fulfillment', [AdminFulfillmentController::class, 'update']);
                 Route::post('/refunds/{refund}/process', [CancellationRefundController::class, 'refund']);
                 Route::apiResource('brands', AdminBrandController::class);
