@@ -1,0 +1,45 @@
+openapi: 3.1.0
+info:
+  title: GutShoes API
+  version: 0.1.0
+  description: Kontrak API GutShoes. Semua timestamp menggunakan UTC dan nilai moneter berupa string desimal.
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local
+paths:
+  /health:
+    get:
+      operationId: healthCheck
+      summary: Memeriksa kesiapan proses API
+      tags: [System]
+      responses:
+        '200':
+          description: API aktif
+          headers:
+            X-Request-ID:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Health'
+components:
+  schemas:
+    Health:
+      type: object
+      required: [status, service, timestamp]
+      properties:
+        status: { type: string, const: ok }
+        service: { type: string, const: gutshoes-api }
+        timestamp: { type: string, format: date-time }
+    Error:
+      type: object
+      required: [message, code, errors, request_id]
+      properties:
+        message: { type: string }
+        code: { type: string }
+        errors: { type: object, additionalProperties: true }
+        request_id: { type: [string, 'null'] }

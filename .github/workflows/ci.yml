@@ -1,0 +1,76 @@
+name: Quality Gate
+
+on:
+  pull_request:
+  push:
+    branches: [main, "phase/**"]
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: gutshoes_test
+          MYSQL_ROOT_PASSWORD: test-root-password
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -ptest-root-password"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+      redis:
+        image: redis:7.4-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd="redis-cli ping" --health-interval=5s
+          --health-timeout=3s --health-retries=20
+    defaults:
+      run:
+        working-directory: apps/backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_mysql, pcntl, posix
+          coverage: none
+      - uses: ramsey/composer-install@v3
+        with:
+          working-directory: apps/backend
+      - run: cp .env.example .env
+      - run: php artisan key:generate
+      - run: php artisan migrate:fresh --force
+        env:
+          DB_DATABASE: gutshoes_test
+          DB_USERNAME: root
+          DB_PASSWORD: test-root-password
+      - run: composer test
+      - run: composer analyse
+      - run: composer format:check
+      - run: composer audit --locked --no-interaction
+
+  storefront:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/storefront
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/storefront/package-lock.json
+      - run: npm ci
+      - run: npm run build
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: bash scripts/check-secrets.sh

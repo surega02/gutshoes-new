@@ -1,0 +1,41 @@
+name: gutshoes
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: gutshoes
+      MYSQL_USER: gutshoes
+      MYSQL_PASSWORD: local-development-only
+      MYSQL_ROOT_PASSWORD: local-root-development-only
+    ports:
+      - "3306:3306"
+    volumes:
+      - gutshoes-mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7.4-alpine
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - gutshoes-redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  gutshoes-mysql:
+  gutshoes-redis:
