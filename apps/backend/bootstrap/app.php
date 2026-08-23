@@ -7,6 +7,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Session\TokenMismatchException;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -36,6 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 $exception instanceof AuthenticationException => 401,
                 $exception instanceof AuthorizationException => 403,
                 $exception instanceof NotFoundHttpException => 404,
+                $exception instanceof TokenMismatchException => 419,
                 $exception instanceof ValidationException => 422,
                 $exception instanceof HttpExceptionInterface => $exception->getStatusCode(),
                 default => 500,

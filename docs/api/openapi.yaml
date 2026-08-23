@@ -26,7 +26,86 @@ paths:
                 properties:
                   data:
                     $ref: '#/components/schemas/Health'
+  /admin/auth/login:
+    post:
+      summary: Login admin menggunakan session cookie
+      tags: [Authentication]
+      responses:
+        '200': { description: Authenticated }
+        '422': { description: Invalid credentials }
+  /auth/me:
+    get:
+      summary: Mengambil user session aktif
+      tags: [Authentication]
+      security: [{ sanctum: [] }]
+      responses:
+        '200': { description: Current user }
+        '401': { description: Unauthenticated }
+  /auth/logout:
+    post:
+      summary: Logout dan invalidasi session
+      tags: [Authentication]
+      security: [{ sanctum: [] }]
+      responses:
+        '200': { description: Logged out }
+  /profile:
+    get:
+      summary: Detail profil customer
+      tags: [Customer]
+      security: [{ sanctum: [] }]
+      responses:
+        '200': { description: Customer profile }
+    put:
+      summary: Perbarui profil customer
+      tags: [Customer]
+      security: [{ sanctum: [] }]
+      responses:
+        '200': { description: Updated profile }
+        '422': { description: Validation failed }
+  /addresses:
+    get:
+      summary: Daftar alamat milik customer
+      tags: [Customer]
+      security: [{ sanctum: [] }]
+      responses:
+        '200': { description: Address collection }
+    post:
+      summary: Tambah alamat customer
+      tags: [Customer]
+      security: [{ sanctum: [] }]
+      responses:
+        '201': { description: Address created }
+  /addresses/{address}:
+    parameters:
+      - in: path
+        name: address
+        required: true
+        schema: { type: integer }
+    get:
+      summary: Detail alamat milik customer
+      tags: [Customer]
+      security: [{ sanctum: [] }]
+      responses:
+        '200': { description: Address detail }
+        '403': { description: Forbidden }
+    put:
+      summary: Perbarui alamat
+      tags: [Customer]
+      security: [{ sanctum: [] }]
+      responses:
+        '200': { description: Address updated }
+    delete:
+      summary: Hapus alamat
+      tags: [Customer]
+      security: [{ sanctum: [] }]
+      responses:
+        '200': { description: Address soft-deleted }
 components:
+  securitySchemes:
+    sanctum:
+      type: apiKey
+      in: cookie
+      name: gutshoes_session
   schemas:
     Health:
       type: object
