@@ -100,6 +100,52 @@ paths:
       security: [{ sanctum: [] }]
       responses:
         '200': { description: Address soft-deleted }
+  /products:
+    get:
+      summary: Public catalog dengan search, filter, sorting, dan pagination
+      tags: [Catalog]
+      parameters:
+        - { in: query, name: search, schema: { type: string } }
+        - { in: query, name: brand, schema: { type: string } }
+        - { in: query, name: category, schema: { type: string } }
+        - { in: query, name: size, schema: { type: string } }
+        - { in: query, name: sort, schema: { type: string, enum: [newest, price_asc, price_desc, name] } }
+      responses:
+        '200': { description: Paginated published products }
+  /products/{slug}:
+    get:
+      summary: Detail published product
+      tags: [Catalog]
+      parameters:
+        - { in: path, name: slug, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Product detail }
+        '404': { description: Product not found }
+  /admin/products:
+    get:
+      summary: Admin product list
+      tags: [Admin Catalog]
+      security: [{ sanctum: [] }]
+      responses: { '200': { description: Products } }
+    post:
+      summary: Create product with variants
+      tags: [Admin Catalog]
+      security: [{ sanctum: [] }]
+      responses: { '201': { description: Product created }, '403': { description: Admin required } }
+  /admin/products/{product}/publish:
+    post:
+      summary: Publish product with active variant
+      tags: [Admin Catalog]
+      security: [{ sanctum: [] }]
+      parameters:
+        - { in: path, name: product, required: true, schema: { type: integer } }
+      responses: { '200': { description: Product published }, '422': { description: Missing active variant } }
+  /admin/products/{product}/images:
+    post:
+      summary: Upload validated product image
+      tags: [Admin Catalog]
+      security: [{ sanctum: [] }]
+      responses: { '201': { description: Image stored } }
 components:
   securitySchemes:
     sanctum:
