@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Order\IdempotencyConflict;
+use App\Domain\Payment\InvalidWebhookSignature;
 use App\Http\Middleware\AssignRequestId;
 use App\Http\Middleware\EnsureAdmin;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -37,18 +38,20 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             $status = match (true) {
+                $exception instanceof InvalidWebhookSignature => 401,
                 $exception instanceof AuthenticationException => 401,
                 $exception instanceof AuthorizationException => 403,
                 $exception instanceof NotFoundHttpException => 404,
                 $exception instanceof TokenMismatchException => 419,
                 $exception instanceof ValidationException => 422,
+                $exception instanceof DomainException => 422,
                 $exception instanceof IdempotencyConflict => 409,
                 $exception instanceof HttpExceptionInterface => $exception->getStatusCode(),
                 default => 500,
             };
 
             $message = match ($status) {
-                401 => 'Unauthenticated.',
+                401 => $exception instanceof InvalidWebhookSignature ? 'Invalid webhook signature.' : 'Unauthenticated.',
                 403 => 'This action is unauthorized.',
                 404 => 'Resource not found.',
                 409 => 'Request conflicts with an existing resource.',
@@ -61,7 +64,7 @@ return Application::configure(basePath: dirname(__DIR__))
             return response()->json([
                 'message' => $message,
                 'code' => match ($status) {
-                    401 => 'UNAUTHENTICATED', 403 => 'FORBIDDEN', 404 => 'NOT_FOUND',
+                    401 => $exception instanceof InvalidWebhookSignature ? 'INVALID_WEBHOOK_SIGNATURE' : 'UNAUTHENTICATED', 403 => 'FORBIDDEN', 404 => 'NOT_FOUND',
                     409 => 'IDEMPOTENCY_CONFLICT', 419 => 'CSRF_TOKEN_MISMATCH', 422 => 'VALIDATION_FAILED',
                     429 => 'RATE_LIMIT_EXCEEDED', default => 'INTERNAL_ERROR',
                 },

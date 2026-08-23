@@ -49,7 +49,7 @@ it('rejects reuse of an idempotency key with a different payload', function () {
 it('rolls back every checkout side effect when stock is insufficient', function () {
     ['cart' => $cart, 'payload' => $payload] = checkoutFixture(1);
     $this->withHeaders(['X-Guest-Cart-Token' => $cart->guest_token, 'Idempotency-Key' => 'checkout-key-00000003'])
-        ->postJson('/api/v1/orders', $payload)->assertStatus(500);
+        ->postJson('/api/v1/orders', $payload)->assertStatus(422);
     expect(Order::count())->toBe(0);
     $this->assertDatabaseCount('inventory_reservations', 0)->assertDatabaseCount('order_items', 0);
 });

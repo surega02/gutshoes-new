@@ -1,6 +1,13 @@
 <?php
 
 return [
+    'midtrans' => [
+        'driver' => env('MIDTRANS_DRIVER', 'fake'),
+        'server_key' => env('MIDTRANS_SERVER_KEY'),
+        'client_key' => env('MIDTRANS_CLIENT_KEY'),
+        'snap_url' => env('MIDTRANS_SNAP_URL', 'https://app.sandbox.midtrans.com/snap/v1/transactions'),
+        'redirect_base_url' => env('MIDTRANS_REDIRECT_BASE_URL', 'https://app.sandbox.midtrans.com/snap/v4/redirection'),
+    ],
     'biteship' => [
         'url' => env('BITESHIP_URL', 'https://api.biteship.com'),
         'api_key' => env('BITESHIP_API_KEY'),

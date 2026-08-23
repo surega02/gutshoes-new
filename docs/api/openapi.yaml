@@ -173,6 +173,23 @@ paths:
         '200': { description: Retry mengembalikan order yang sama }
         '409': { description: Idempotency key digunakan dengan payload berbeda }
         '422': { description: Cart, stok, voucher, alamat, atau shipping tidak valid }
+  /orders/{orderNumber}/payment:
+    post:
+      summary: Membuat atau menggunakan ulang transaksi Midtrans Snap
+      tags: [Payment]
+      parameters:
+        - { in: path, name: orderNumber, required: true, schema: { type: string } }
+      responses:
+        '201': { description: Snap transaction tersedia }
+        '403': { description: Order bukan milik customer }
+        '422': { description: Order tidak dapat dibayar }
+  /payments/midtrans/webhook:
+    post:
+      summary: Menerima notifikasi pembayaran Midtrans terverifikasi
+      tags: [Payment]
+      responses:
+        '200': { description: Event diterima atau sudah pernah diproses }
+        '401': { description: Signature tidak valid }
 components:
   securitySchemes:
     sanctum:
@@ -195,4 +212,3 @@ components:
         code: { type: string }
         errors: { type: object, additionalProperties: true }
         request_id: { type: [string, 'null'] }
-

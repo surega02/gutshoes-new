@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Domain\Payment\FakeMidtransProvider;
+use App\Domain\Payment\HttpMidtransProvider;
+use App\Domain\Payment\MidtransProvider;
 use App\Domain\Shipping\BiteshipShippingProvider;
 use App\Domain\Shipping\FakeShippingProvider;
 use App\Domain\Shipping\ShippingProvider;
@@ -14,6 +17,9 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->bind(MidtransProvider::class, fn () => config('services.midtrans.driver') === 'http'
+            ? new HttpMidtransProvider
+            : new FakeMidtransProvider);
         $this->app->bind(ShippingProvider::class, fn () => config('gutshoes.shipping_driver') === 'biteship'
             ? new BiteshipShippingProvider
             : new FakeShippingProvider);
