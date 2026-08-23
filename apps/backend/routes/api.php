@@ -5,7 +5,9 @@ use App\Http\Controllers\Api\V1\AdminBrandController;
 use App\Http\Controllers\Api\V1\AdminCategoryController;
 use App\Http\Controllers\Api\V1\AdminProductController;
 use App\Http\Controllers\Api\V1\AdminSizeController;
+use App\Http\Controllers\Api\V1\CartController;
 use App\Http\Controllers\Api\V1\CatalogController;
+use App\Http\Controllers\Api\V1\CheckoutQuoteController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\SessionController;
 use Illuminate\Support\Facades\Route;
@@ -16,6 +18,11 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
     Route::get('/products/{slug}', [CatalogController::class, 'show']);
 
     Route::middleware('web')->group(function (): void {
+        Route::get('/cart', [CartController::class, 'show']);
+        Route::post('/cart/items', [CartController::class, 'storeItem']);
+        Route::patch('/cart/items/{item}', [CartController::class, 'updateItem']);
+        Route::delete('/cart/items/{item}', [CartController::class, 'deleteItem']);
+        Route::post('/checkout/quote', CheckoutQuoteController::class)->middleware('throttle:checkout');
         Route::post('/admin/auth/login', [SessionController::class, 'adminLogin'])->middleware('throttle:auth');
         Route::middleware('auth:sanctum')->group(function (): void {
             Route::get('/auth/me', [SessionController::class, 'me']);

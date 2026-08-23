@@ -1,6 +1,11 @@
 <?php
 
 return [
+    'biteship' => [
+        'url' => env('BITESHIP_URL', 'https://api.biteship.com'),
+        'api_key' => env('BITESHIP_API_KEY'),
+    ],
+
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),

@@ -146,6 +146,21 @@ paths:
       tags: [Admin Catalog]
       security: [{ sanctum: [] }]
       responses: { '201': { description: Image stored } }
+  /cart:
+    get:
+      summary: Read or create guest/customer cart
+      tags: [Cart]
+      responses: { '200': { description: Cart and server pricing } }
+  /cart/items:
+    post:
+      summary: Add product variant to cart
+      tags: [Cart]
+      responses: { '201': { description: Cart item added } }
+  /checkout/quote:
+    post:
+      summary: Calculate promotion, voucher, shipping, and grand total
+      tags: [Checkout]
+      responses: { '200': { description: Authoritative quote }, '422': { description: Invalid cart, voucher, or service } }
 components:
   securitySchemes:
     sanctum:

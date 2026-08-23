@@ -3,10 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Cart extends Model
 {
     protected $guarded = [];
 
-    protected $table = 'carts';
+    /** @return HasMany<CartItem,$this> */
+    public function items(): HasMany
+    {
+        return $this->hasMany(CartItem::class);
+    }
 }
