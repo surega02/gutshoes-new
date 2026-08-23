@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api, ApiError } from './api';
 import AdminPanel from './AdminPanel';
 import logoGutShoes from './assets/logo-gutshoes.png';

@@ -20,6 +20,7 @@ it('returns operational dashboard with database low stock threshold', function (
 it('forbids non admins from every operations endpoint', function () {
     $customer = User::factory()->create(['role' => UserRole::CUSTOMER]);
     $this->actingAs($customer)->getJson('/api/v1/admin/orders')->assertForbidden();
+    $this->actingAs($customer)->getJson('/api/v1/admin/audit-logs')->assertForbidden();
     $this->actingAs($customer)->putJson('/api/v1/admin/configurations/low_stock_threshold', ['value' => 5])->assertForbidden();
 });
 
@@ -37,6 +38,11 @@ it('writes a redacted immutable audit record for admin mutation', function () {
     $this->assertDatabaseHas('store_configurations', ['key' => 'low_stock_threshold']);
 });
 
+it('lists immutable audit records for administrators', function () {
+    $admin = User::factory()->create(['role' => UserRole::ADMIN]);
+    AuditLog::create(['admin_id' => $admin->id, 'action' => 'UPDATE', 'entity_type' => 'configuration', 'entity_id' => 1, 'description' => 'Configuration updated', 'request_id' => 'audit-list-1', 'ip_address' => '127.0.0.1', 'metadata' => [], 'created_at' => now()]);
+    $this->actingAs($admin)->getJson('/api/v1/admin/audit-logs')->assertOk()->assertJsonPath('data.0.action', 'UPDATE');
+});
 it('adjusts inventory through the domain engine and records its audit trail', function () {
     $admin = User::factory()->create(['role' => UserRole::ADMIN]);
     $inventory = Inventory::factory()->create(['on_hand' => 5, 'reserved' => 0]);

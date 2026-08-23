@@ -241,7 +241,12 @@ paths:
       tags: [Admin Operations]
       security: [{ sanctum: [] }]
       responses: { '200': { description: Orders } }
-  /admin/inventories:
+  /admin/audit-logs:
+    get:
+      summary: Daftar audit log admin yang immutable dan terpaginasikan
+      tags: [Admin Operations]
+      security: [{ sanctum: [] }]
+      responses: { '200': { description: Audit logs }, '403': { description: Admin required } }  /admin/inventories:
     get:
       summary: Daftar inventory lintas warehouse
       tags: [Admin Operations]

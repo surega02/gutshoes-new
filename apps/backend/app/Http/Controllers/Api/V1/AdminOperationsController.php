@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Domain\Inventory\InventoryService;
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
 use App\Models\Inventory;
 use App\Models\Order;
 use App\Models\OrderCancellation;
@@ -60,6 +61,11 @@ class AdminOperationsController extends Controller
     public function customers(Request $request): JsonResponse
     {
         return $this->listing(User::query()->where('role', 'CUSTOMER'), $request, ['email'], 'created_at');
+    }
+
+    public function auditLogs(Request $request): JsonResponse
+    {
+        return $this->listing(AuditLog::query(), $request, ['admin_id', 'action', 'entity_type'], 'created_at');
     }
 
     public function promotions(Request $request): JsonResponse
