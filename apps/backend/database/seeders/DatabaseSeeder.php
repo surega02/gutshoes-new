@@ -2,24 +2,27 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Inventory;
+use App\Models\ProductVariant;
+use App\Models\Warehouse;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
+        if (app()->isProduction()) {
+            $this->command?->warn('Development seeder dilewati di production.');
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+            return;
+        }
+
+        $warehouse = Warehouse::factory()->create(['code' => 'JKT-DEV-01', 'name' => 'Gudang Development Jakarta']);
+        ProductVariant::factory()->count(12)->create()->each(
+            fn (ProductVariant $variant) => Inventory::factory()->create([
+                'warehouse_id' => $warehouse->id,
+                'product_variant_id' => $variant->id,
+            ])
+        );
     }
 }

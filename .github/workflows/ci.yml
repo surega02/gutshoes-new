@@ -48,6 +48,10 @@ jobs:
           DB_USERNAME: root
           DB_PASSWORD: test-root-password
       - run: composer test
+        env:
+          DB_DATABASE: gutshoes_test
+          DB_USERNAME: root
+          DB_PASSWORD: test-root-password
       - run: composer analyse
       - run: composer format:check
       - run: composer audit --locked --no-interaction
