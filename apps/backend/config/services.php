@@ -6,6 +6,7 @@ return [
         'server_key' => env('MIDTRANS_SERVER_KEY'),
         'client_key' => env('MIDTRANS_CLIENT_KEY'),
         'snap_url' => env('MIDTRANS_SNAP_URL', 'https://app.sandbox.midtrans.com/snap/v1/transactions'),
+        'api_url' => env('MIDTRANS_API_URL', 'https://api.sandbox.midtrans.com/v2'),
         'redirect_base_url' => env('MIDTRANS_REDIRECT_BASE_URL', 'https://app.sandbox.midtrans.com/snap/v4/redirection'),
     ],
     'biteship' => [

@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\AdminCategoryController;
 use App\Http\Controllers\Api\V1\AdminFulfillmentController;
 use App\Http\Controllers\Api\V1\AdminProductController;
 use App\Http\Controllers\Api\V1\AdminSizeController;
+use App\Http\Controllers\Api\V1\CancellationRefundController;
 use App\Http\Controllers\Api\V1\CartController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\CheckoutQuoteController;
@@ -31,6 +32,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
         Route::post('/checkout/quote', CheckoutQuoteController::class)->middleware('throttle:checkout');
         Route::post('/orders', [OrderController::class, 'store'])->middleware('throttle:checkout');
         Route::post('/orders/{orderNumber}/payment', [PaymentController::class, 'store'])->middleware('throttle:checkout');
+        Route::post('/orders/{orderNumber}/cancel', [CancellationRefundController::class, 'cancel'])->middleware('throttle:checkout');
         Route::post('/admin/auth/login', [SessionController::class, 'adminLogin'])->middleware('throttle:auth');
         Route::middleware('auth:sanctum')->group(function (): void {
             Route::get('/auth/me', [SessionController::class, 'me']);
@@ -42,6 +44,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
             Route::get('/orders/{orderNumber}', [CustomerOrderController::class, 'show']);
             Route::prefix('admin')->middleware('admin')->group(function (): void {
                 Route::patch('/orders/{order}/fulfillment', [AdminFulfillmentController::class, 'update']);
+                Route::post('/refunds/{refund}/process', [CancellationRefundController::class, 'refund']);
                 Route::apiResource('brands', AdminBrandController::class);
                 Route::apiResource('categories', AdminCategoryController::class);
                 Route::apiResource('sizes', AdminSizeController::class)->except('show');

@@ -215,6 +215,20 @@ paths:
       tags: [Admin Orders]
       security: [{ sanctum: [] }]
       responses: { '200': { description: Status diperbarui }, '403': { description: Admin required }, '422': { description: Transisi tidak valid } }
+  /orders/{orderNumber}/cancel:
+    post:
+      summary: Membatalkan order pending payment atau paid
+      tags: [Cancellation]
+      parameters:
+        - { in: path, name: orderNumber, required: true, schema: { type: string } }
+        - { in: header, name: Idempotency-Key, required: true, schema: { type: string, minLength: 16, maxLength: 128 } }
+      responses: { '201': { description: Cancellation approved dan refund pending bila paid }, '422': { description: Status tidak dapat dibatalkan } }
+  /admin/refunds/{refund}/process:
+    post:
+      summary: Memproses atau menggunakan ulang refund Midtrans
+      tags: [Admin Refunds]
+      security: [{ sanctum: [] }]
+      responses: { '200': { description: Status refund terkini }, '403': { description: Admin required } }
 components:
   securitySchemes:
     sanctum:
