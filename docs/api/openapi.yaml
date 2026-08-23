@@ -161,6 +161,18 @@ paths:
       summary: Calculate promotion, voucher, shipping, and grand total
       tags: [Checkout]
       responses: { '200': { description: Authoritative quote }, '422': { description: Invalid cart, voucher, or service } }
+  /orders:
+    post:
+      summary: Membuat order dari cart secara idempoten dan mereservasi stok 24 jam
+      tags: [Checkout]
+      parameters:
+        - { in: header, name: Idempotency-Key, required: true, schema: { type: string, minLength: 16, maxLength: 128 } }
+        - { in: header, name: X-Guest-Cart-Token, required: false, schema: { type: string, format: uuid } }
+      responses:
+        '201': { description: Order baru dibuat }
+        '200': { description: Retry mengembalikan order yang sama }
+        '409': { description: Idempotency key digunakan dengan payload berbeda }
+        '422': { description: Cart, stok, voucher, alamat, atau shipping tidak valid }
 components:
   securitySchemes:
     sanctum:
@@ -183,3 +195,4 @@ components:
         code: { type: string }
         errors: { type: object, additionalProperties: true }
         request_id: { type: [string, 'null'] }
+

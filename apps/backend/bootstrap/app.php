@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Order\IdempotencyConflict;
 use App\Http\Middleware\AssignRequestId;
 use App\Http\Middleware\EnsureAdmin;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -41,6 +42,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 $exception instanceof NotFoundHttpException => 404,
                 $exception instanceof TokenMismatchException => 419,
                 $exception instanceof ValidationException => 422,
+                $exception instanceof IdempotencyConflict => 409,
                 $exception instanceof HttpExceptionInterface => $exception->getStatusCode(),
                 default => 500,
             };
@@ -49,6 +51,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 401 => 'Unauthenticated.',
                 403 => 'This action is unauthorized.',
                 404 => 'Resource not found.',
+                409 => 'Request conflicts with an existing resource.',
                 419 => 'CSRF token mismatch.',
                 422 => 'The given data was invalid.',
                 429 => 'Too many requests.',
@@ -59,7 +62,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 'message' => $message,
                 'code' => match ($status) {
                     401 => 'UNAUTHENTICATED', 403 => 'FORBIDDEN', 404 => 'NOT_FOUND',
-                    419 => 'CSRF_TOKEN_MISMATCH', 422 => 'VALIDATION_FAILED',
+                    409 => 'IDEMPOTENCY_CONFLICT', 419 => 'CSRF_TOKEN_MISMATCH', 422 => 'VALIDATION_FAILED',
                     429 => 'RATE_LIMIT_EXCEEDED', default => 'INTERNAL_ERROR',
                 },
                 'errors' => $exception instanceof ValidationException ? $exception->errors() : (object) [],

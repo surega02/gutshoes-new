@@ -52,4 +52,10 @@ class Order extends Model
     {
         return $this->hasMany(Refund::class);
     }
+
+    /** @return HasMany<OrderStatusHistory, $this> */
+    public function statusHistories(): HasMany
+    {
+        return $this->hasMany(OrderStatusHistory::class);
+    }
 }
