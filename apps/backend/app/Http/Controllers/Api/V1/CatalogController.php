@@ -46,7 +46,7 @@ class CatalogController extends Controller
     {
         return ['slug' => $product->slug, 'name' => $product->name, 'description' => $product->description, 'brand' => ['name' => $product->brand->name, 'slug' => $product->brand->slug],
             'categories' => $product->categories->map->only(['name', 'slug'])->values(), 'images' => $product->images->map->only(['id', 'path', 'alt_text', 'is_primary'])->values(),
-            'variants' => $product->variants->map(fn ($v) => ['sku' => $v->sku, 'size' => $v->size->label, 'price' => (string) $v->price, 'currency' => $v->currency,
-                'weight_grams' => $v->weight_grams, 'available_stock' => $v->inventories->sum(fn ($i) => max(0, $i->on_hand - $i->reserved)), 'sold_out' => $v->inventories->sum(fn ($i) => max(0,$i->on_hand - $i->reserved)) === 0])->values()];
+            'variants' => $product->variants->map(fn ($v) => ['id' => $v->id, 'sku' => $v->sku, 'size' => $v->size->label, 'price' => (string) $v->price, 'currency' => $v->currency,
+                'weight_grams' => $v->weight_grams, 'available_stock' => $v->inventories->sum(fn ($i) => max(0, $i->on_hand - $i->reserved)), 'sold_out' => $v->inventories->sum(fn ($i) => max(0, $i->on_hand - $i->reserved)) === 0])->values()];
     }
 }

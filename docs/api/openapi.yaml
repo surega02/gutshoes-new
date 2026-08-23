@@ -259,6 +259,12 @@ paths:
       tags: [Admin Operations]
       security: [{ sanctum: [] }]
       responses: { '200': { description: Configuration saved } }
+  /health/ready:
+    get:
+      operationId: readinessCheck
+      summary: Memeriksa koneksi database dan cache
+      tags: [System]
+      responses: { '200': { description: Dependency siap }, '503': { description: Dependency degraded } }
 components:
   securitySchemes:
     sanctum:

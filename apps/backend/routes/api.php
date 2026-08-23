@@ -15,10 +15,12 @@ use App\Http\Controllers\Api\V1\CustomerOrderController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\ReadinessController;
 use App\Http\Controllers\Api\V1\SessionController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
+    Route::get('/health/ready', ReadinessController::class)->middleware('throttle:health');
     Route::get('/health', fn () => response()->json(['data' => ['status' => 'ok', 'service' => 'gutshoes-api', 'timestamp' => now()->utc()->toIso8601String()]]))->name('api.v1.health');
     Route::get('/products', [CatalogController::class, 'index']);
     Route::get('/products/{slug}', [CatalogController::class, 'show']);
