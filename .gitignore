@@ -37,3 +37,24 @@ Thumbs.db
 *.log
 
 .impeccable/chrome-qa/
+
+# Private keys, certificates, and provider credentials
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+auth.json
+credentials.json
+service-account*.json
+client-secret*.json
+google-services.json
+GoogleService-Info.plist
+secrets/
+apps/*/secrets/
+storage/oauth-*.key

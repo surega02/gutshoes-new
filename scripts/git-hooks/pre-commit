@@ -1,0 +1,15 @@
+#!/bin/sh
+set -eu
+blocked_files='(^|/)(\.env($|\.)|auth\.json$|credentials\.json$|service-account.*\.json$|client-secret.*\.json$|google-services\.json$|GoogleService-Info\.plist$|id_rsa($|\.)|id_ed25519($|\.)|secrets/)|\.(pem|key|p12|pfx|jks|keystore)$'
+staged_files="$(git diff --cached --name-only --diff-filter=ACMR)"
+if printf '%s\n' "$staged_files" | grep -E "$blocked_files" | grep -Ev '(^|/)\.env\.example$' >/dev/null 2>&1; then
+  echo "Commit diblokir: terdapat file yang berpotensi berisi credential:" >&2
+  printf '%s\n' "$staged_files" | grep -E "$blocked_files" | grep -Ev '(^|/)\.env\.example$' >&2 || true
+  exit 1
+fi
+secret_patterns='(-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9_]{30,}|github_pat_[A-Za-z0-9_]{30,}|sk_live_[A-Za-z0-9]{20,}|MIDTRANS_SERVER_KEY[[:space:]]*=[[:space:]]*[^$<{[:space:]]|MIDTRANS_CLIENT_KEY[[:space:]]*=[[:space:]]*[^$<{[:space:]]|GOOGLE_CLIENT_SECRET[[:space:]]*=[[:space:]]*[^$<{[:space:]]|DB_PASSWORD[[:space:]]*=[[:space:]]*[^$<{[:space:]]+)'
+if git diff --cached --no-ext-diff --unified=0 -- . ':(exclude)package-lock.json' ':(exclude)composer.lock' | grep '^+' | grep -Ev '^\+\+\+' | grep -Ei "$secret_patterns" >/dev/null 2>&1; then
+  echo "Commit diblokir: pola credential ditemukan pada perubahan yang di-stage." >&2
+  exit 1
+fi
+exit 0
