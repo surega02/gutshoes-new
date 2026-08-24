@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { api } from './api';
 import { rupiah } from './data';
 import logoGutShoes from './assets/logo-gutshoes.png';
