@@ -1,5 +1,5 @@
 import React from "react";
-import logoGutShoes from "../../assets/logo-gutshoes.png";
+import logoGutShoes from "../../assets/logo-gutshoes.webp";
 import Icon from "../ui/Icon";
 
 function Header({cartCount, navigate, query, setQuery, user, page, categories}) {
@@ -11,7 +11,7 @@ function Header({cartCount, navigate, query, setQuery, user, page, categories}) 
           onClick={() => navigate("home")}
           aria-label="Ke beranda GutShoes"
         >
-          <img src={logoGutShoes} alt="GutShoes" />
+          <img src={logoGutShoes} alt="GutShoes" width="600" height="152" decoding="async" fetchPriority="high" />
         </button>
         <label className="search">
           <Icon name="search" />

@@ -1,5 +1,5 @@
 import React, {useState} from "react";
-import logoGutShoes from "../../assets/logo-gutshoes.png";
+import logoGutShoes from "../../assets/logo-gutshoes.webp";
 import Button from "../../components/ui/Button";
 import Feedback from "../../components/ui/Feedback";
 import Icon from "../../components/ui/Icon";
@@ -30,7 +30,7 @@ function LoginV2({navigate, onLogin, returnTo}) {
         </div>
       </section>
       <section className="login-panel" aria-labelledby="login-title">
-        <img src={logoGutShoes} alt="" />
+        <img src={logoGutShoes} alt="" width="600" height="152" decoding="async" />
         <h2 id="login-title">Masuk ke GutShoes</h2>
         <p>
           Gunakan akun Google sebagai identitas utama. Email dari Google tidak

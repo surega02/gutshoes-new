@@ -1,4 +1,4 @@
-import React, {useMemo, useState} from "react";
+import React, {useEffect, useMemo, useRef, useState} from "react";
 import {api, isBackendUnavailable} from "../api";
 import {rupiah} from "../data";
 import RegionFields from "../components/forms/RegionFields";
@@ -27,6 +27,8 @@ function Checkout({
   const [mode, setMode] = useState(cartSource);
   const [operation, setOperation] = useState("");
   const [error, setError] = useState("");
+  const [invalidFields, setInvalidFields] = useState([]);
+  const checkoutFormRef = useRef(null);
   const [demoOrderReady, setDemoOrderReady] = useState(false);
   const shippingOptions = [
     {
@@ -70,6 +72,12 @@ function Checkout({
     const fieldMessage = Object.values(err?.errors || {}).flat()[0];
     return fieldMessage || err?.message || fallback;
   };
+  useEffect(() => {
+    if (!error || step !== 1) return;
+    checkoutFormRef.current
+      ?.querySelector('[aria-invalid="true"], input:invalid, textarea:invalid')
+      ?.focus();
+  }, [error, invalidFields, step]);
   const quotePayload = (service = shippingService, code = appliedVoucher) => ({
     destination_area_id: buyer?.village_code || "destination",
     province_code: buyer?.province_code,
@@ -86,6 +94,7 @@ function Checkout({
   ) => {
     setOperation(code ? "voucher" : "quote");
     setError("");
+    setInvalidFields([]);
     try {
       if (cartSource !== "api" || !guestCartToken) {
         setMode("demo");
@@ -123,6 +132,7 @@ function Checkout({
         return true;
       }
       setPricing(null);
+      setInvalidFields(Object.keys(err?.errors || {}));
       setError(
         messageFor(
           err,
@@ -137,6 +147,7 @@ function Checkout({
   const next = async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
+    setInvalidFields([]);
     if (!form.reportValidity()) return;
     const data = Object.fromEntries(new FormData(form));
     const selectedAddress = addresses.find(
@@ -152,6 +163,13 @@ function Checkout({
       setError(
         "Pilih provinsi, kota/kabupaten, kecamatan, dan kelurahan/desa sebelum melanjutkan.",
       );
+      setInvalidFields([
+        "province_code",
+        "regency_code",
+        "district_code",
+        "village_code",
+        "postal",
+      ]);
       return;
     }
     const nextBuyer = selectedAddress
@@ -395,7 +413,7 @@ function Checkout({
             </span>
           </div>
           {step === 1 && (
-            <form onSubmit={next}>
+            <form ref={checkoutFormRef} onSubmit={next}>
               <h2>{user ? "Pilih alamat pengiriman" : "Data pembeli"}</h2>
               <p>
                 {user
@@ -440,6 +458,8 @@ function Checkout({
                     required
                     maxLength="100"
                     autoComplete="name"
+                    aria-invalid={invalidFields.includes("name")}
+                    aria-describedby={invalidFields.includes("name") ? "checkout-error" : undefined}
                     defaultValue={user?.name || ""}
                   />
                 </label>
@@ -450,6 +470,8 @@ function Checkout({
                     required
                     type="email"
                     autoComplete="email"
+                    aria-invalid={invalidFields.includes("email")}
+                    aria-describedby={invalidFields.includes("email") ? "checkout-error" : undefined}
                     defaultValue={user?.email || ""}
                     readOnly={Boolean(user)}
                   />
@@ -461,6 +483,8 @@ function Checkout({
                     required
                     inputMode="tel"
                     autoComplete="tel"
+                    aria-invalid={invalidFields.includes("phone")}
+                    aria-describedby={invalidFields.includes("phone") ? "checkout-error" : undefined}
                     pattern="[0-9+ -]{8,20}"
                     defaultValue={user?.phone || ""}
                   />
@@ -472,6 +496,8 @@ function Checkout({
                     required
                     maxLength="255"
                     autoComplete="street-address"
+                    aria-invalid={invalidFields.includes("address")}
+                    aria-describedby={invalidFields.includes("address") ? "checkout-error" : undefined}
                     defaultValue={
                       addresses.find((address) => address.isDefault)?.address ||
                       ""
@@ -481,6 +507,8 @@ function Checkout({
                 <RegionFields
                   initial={addresses.find((address) => address.isDefault) || {}}
                   searchable
+                  invalidFields={invalidFields}
+                  errorId="checkout-error"
                 />
               </div>
               <Feedback id="checkout-error">{error}</Feedback>

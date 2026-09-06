@@ -10,6 +10,8 @@ function SearchableCombobox({
   value,
   disabled,
   loading,
+  invalid = false,
+  errorId,
   onSelect,
 }) {
   const [open, setOpen] = useState(false);
@@ -29,6 +31,8 @@ function SearchableCombobox({
             aria-controls={`region-options-${name}`}
             aria-label={`Pilih ${label}`}
             aria-required="true"
+            aria-invalid={invalid}
+            aria-describedby={invalid ? errorId : undefined}
             disabled={unavailable}
           >
             <span className={selected ? "" : "is-placeholder"}>

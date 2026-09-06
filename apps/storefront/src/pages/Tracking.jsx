@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import {api} from "../api";
 import {rupiah} from "../data";
 import Button from "../components/ui/Button";
@@ -10,6 +10,7 @@ function Tracking({order, navigate, user, onRemember, onOpenPayment}) {
   const [result, setResult] = useState(order?.server || null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const formRef = useRef(null);
   const accessToken = order?.accessToken || "";
   const statusLabel = {
     PENDING_PAYMENT: "Menunggu pembayaran",
@@ -69,6 +70,9 @@ function Tracking({order, navigate, user, onRemember, onOpenPayment}) {
   useEffect(() => {
     if (accessToken && number && !result) loadWithToken();
   }, [accessToken, number]);
+  useEffect(() => {
+    if (error) formRef.current?.querySelector("input:not([readonly])")?.focus();
+  }, [error]);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -126,7 +130,7 @@ function Tracking({order, navigate, user, onRemember, onOpenPayment}) {
             ? "Akses aman pesanan ditemukan di browser ini. Status dimuat langsung dari Laravel tanpa memakai email sebagai kredensial."
             : "Masukkan nomor pesanan dan email yang digunakan saat checkout untuk pencarian manual."}
         </p>
-        <form onSubmit={submit} aria-busy={loading}>
+        <form ref={formRef} onSubmit={submit} aria-busy={loading}>
           <label>
             Nomor pesanan
             <input
@@ -134,6 +138,8 @@ function Tracking({order, navigate, user, onRemember, onOpenPayment}) {
               onChange={(e) => setNumber(e.target.value)}
               placeholder="GS-YYYYMMDD-XXXXXXXX"
               required
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? "tracking-error" : undefined}
               autoCapitalize="characters"
               readOnly={Boolean(accessToken)}
             />
@@ -146,6 +152,8 @@ function Tracking({order, navigate, user, onRemember, onOpenPayment}) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                aria-invalid={Boolean(error)}
+                aria-describedby={error ? "tracking-error" : undefined}
                 autoComplete="email"
               />
             </label>
@@ -159,7 +167,7 @@ function Tracking({order, navigate, user, onRemember, onOpenPayment}) {
           </Button>
         </form>
         {error && (
-          <p className="notice error" role="alert">
+          <p id="tracking-error" className="notice error" role="alert">
             {error}
           </p>
         )}

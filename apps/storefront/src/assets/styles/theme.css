@@ -1,4 +1,21 @@
 :root {
+  --white: #fff;
+  --surface-raised: #f7f9fa;
+  --surface-product: #f7f8f8;
+  --surface-gallery: #f5f7f7;
+  --surface-summary: #f3f6f7;
+  --surface-warning: #fff7df;
+  --surface-brand-deep: #0d1b24;
+  --surface-footer: #0b1821;
+  --border-control: #cfd7dc;
+  --border-control-strong: #bdc7cd;
+  --border-muted: #d8dee2;
+  --border-emphasis: #c7d0d5;
+  --text-placeholder: #7b858f;
+  --text-disabled: #969fa5;
+  --text-on-dark-muted: #b9c5cc;
+  --warning-ink: #6b5412;
+  --action-hover: #006b9d;
   --action-on-soft: #006f9f;
   --surface-info: #e9f8fd;
   --surface-success: #e9f8f2;
@@ -55,4 +72,12 @@
 
 .profile-form input:disabled {
   background: var(--field-disabled);
+}
+
+.brand img,
+footer img,
+.login-panel > img,
+.adm-brand img,
+.admin-login form img {
+  height: auto;
 }

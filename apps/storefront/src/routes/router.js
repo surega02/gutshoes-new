@@ -9,6 +9,34 @@ const ADMIN_SECTIONS = new Set([
   "customers", "promotions", "settings", "audit",
 ]);
 
+const STOREFRONT_TITLES = {
+  home: "Sepatu olahraga untuk setiap langkah",
+  catalog: "Katalog sepatu olahraga",
+  product: "Detail produk",
+  cart: "Keranjang belanja",
+  checkout: "Checkout",
+  payment: "Status pembayaran",
+  "guest-orders": "Pesanan terakhir saya",
+  tracking: "Lacak pesanan",
+  login: "Masuk ke akun",
+  profile: "Profil saya",
+  addresses: "Alamat saya",
+  orders: "Riwayat pesanan",
+  "order-detail": "Detail pesanan",
+};
+
+const ADMIN_TITLES = {
+  dashboard: "Dashboard",
+  products: "Produk",
+  catalog: "Katalog",
+  inventory: "Inventaris",
+  orders: "Pesanan",
+  customers: "Pelanggan",
+  promotions: "Promosi",
+  settings: "Pengaturan",
+  audit: "Audit log",
+};
+
 export function readRoute(hash = window.location.hash) {
   const raw = hash.replace(/^#/, "") || "home";
   const [path, search = ""] = raw.split("?");
@@ -47,4 +75,17 @@ export function routeHash(page, data = {}) {
 
 export function isAdminSection(section) {
   return ADMIN_SECTIONS.has(section);
+}
+
+export function routeTitle(route, productName = "") {
+  if (route.page === "admin") {
+    return `${ADMIN_TITLES[route.data.section] || "Admin"} — Admin GutShoes`;
+  }
+  if (route.page === "product" && productName) {
+    return `${productName} — GutShoes`;
+  }
+  if (route.page === "order-detail" && route.data.orderNumber) {
+    return `Pesanan ${route.data.orderNumber} — GutShoes`;
+  }
+  return `${STOREFRONT_TITLES[route.page] || STOREFRONT_TITLES.home} — GutShoes`;
 }

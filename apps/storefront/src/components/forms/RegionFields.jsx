@@ -2,7 +2,7 @@ import React, {useEffect, useState} from "react";
 import {api} from "../../api";
 import SearchableCombobox from "./SearchableCombobox";
 
-function RegionFields({initial = {}, searchable = false}) {
+function RegionFields({initial = {}, searchable = false, invalidFields = [], errorId}) {
   const [lists, setLists] = useState({
       provinces: [],
       regencies: [],
@@ -61,6 +61,8 @@ function RegionFields({initial = {}, searchable = false}) {
           value={value[key]}
           disabled={disabled}
           loading={loading === key}
+          invalid={invalidFields.includes(name)}
+          errorId={errorId}
           onSelect={(item) => choose(key, item.code, resets)}
         />
       );
@@ -72,6 +74,8 @@ function RegionFields({initial = {}, searchable = false}) {
           required
           value={value[key]}
           disabled={disabled || loading === key}
+          aria-invalid={invalidFields.includes(name)}
+          aria-describedby={invalidFields.includes(name) ? errorId : undefined}
           onChange={(e) => choose(key, e.target.value, resets)}
         >
           <option value="">
@@ -127,6 +131,8 @@ function RegionFields({initial = {}, searchable = false}) {
           required
           readOnly
           value={village?.postal_code || initial.postal || ""}
+          aria-invalid={invalidFields.includes("postal")}
+          aria-describedby={invalidFields.includes("postal") ? errorId : undefined}
         />
       </label>
       {error && (

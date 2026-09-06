@@ -1,17 +1,18 @@
-import React from "react";
+import React, {lazy} from "react";
 import Home from "../pages/Home";
 import Catalog from "../pages/Catalog";
-import ProductDetail from "../pages/ProductDetail";
-import Cart from "../pages/Cart";
-import Checkout from "../pages/Checkout";
-import Payment from "../pages/Payment";
-import GuestOrders from "../pages/GuestOrders";
-import Tracking from "../pages/Tracking";
-import Login from "../pages/account/Login";
-import Profile from "../pages/account/Profile";
-import Addresses from "../pages/account/Addresses";
-import Orders from "../pages/account/Orders";
-import OrderDetail from "../pages/account/OrderDetail";
+
+const ProductDetail = lazy(() => import("../pages/ProductDetail"));
+const Cart = lazy(() => import("../pages/Cart"));
+const Checkout = lazy(() => import("../pages/Checkout"));
+const Payment = lazy(() => import("../pages/Payment"));
+const GuestOrders = lazy(() => import("../pages/GuestOrders"));
+const Tracking = lazy(() => import("../pages/Tracking"));
+const Login = lazy(() => import("../pages/account/Login"));
+const Profile = lazy(() => import("../pages/account/Profile"));
+const Addresses = lazy(() => import("../pages/account/Addresses"));
+const Orders = lazy(() => import("../pages/account/Orders"));
+const OrderDetail = lazy(() => import("../pages/account/OrderDetail"));
 
 export const storefrontRoutes = [
   {page: "home", path: "/", render: (c) => <Home navigate={c.navigate} openProduct={c.openProduct} products={c.products} loading={c.catalogLoading} error={c.catalogError} retry={c.loadCatalog} />},

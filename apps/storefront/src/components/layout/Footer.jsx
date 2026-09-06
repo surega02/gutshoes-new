@@ -1,11 +1,11 @@
 import React from "react";
-import logoGutShoes from "../../assets/logo-gutshoes.png";
+import logoGutShoes from "../../assets/logo-gutshoes.webp";
 
 function Footer() {
   return (
     <footer>
       <div>
-        <img src={logoGutShoes} alt="GutShoes" />
+        <img src={logoGutShoes} alt="GutShoes" width="600" height="152" loading="lazy" decoding="async" />
         <p>
           Sepatu olahraga dengan informasi harga dan ukuran yang mudah dipahami.
         </p>

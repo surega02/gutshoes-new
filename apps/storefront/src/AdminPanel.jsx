@@ -1,7 +1,7 @@
 import React, {useEffect, useRef, useState} from "react";
 import {api} from "./api";
 import {forgetAdminSession} from "./lib/adminSession";
-import logoGutShoes from "./assets/logo-gutshoes.png";
+import logoGutShoes from "./assets/logo-gutshoes.webp";
 import {nav} from "./admin/config";
 import Icon from "./admin/components/Icon";
 import {getAdminRoute} from "./routes";
@@ -71,7 +71,7 @@ export default function AdminPanel({
       </a>
       <aside className="adm-sidebar">
         <div className="adm-brand">
-          <img src={logoGutShoes} alt="GutShoes" />
+          <img src={logoGutShoes} alt="GutShoes" width="600" height="152" decoding="async" />
           <span>ADMIN</span>
         </div>
         <nav ref={navRef} aria-label="Navigasi admin">

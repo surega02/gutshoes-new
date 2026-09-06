@@ -12,7 +12,7 @@
 .size-filter button.active {
   background: var(--ink);
   border-color: var(--ink);
-  color: #fff;
+  color: var(--white);
 }
 
 .product-name-button {

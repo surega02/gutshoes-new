@@ -1,12 +1,22 @@
-import React, {useEffect, useRef, useState} from "react";
-import AdminPanel from "./ProtectedAdmin";
+import React, {lazy, Suspense, useEffect, useRef, useState} from "react";
 import {api, googleLoginUrl, isBackendUnavailable} from "./api";
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
 import {cartKey, mapServerCart} from "./lib/cart";
 import {initialGuestOrders, recoveryReference, sanitizeGuestReference, validGuestReference, writeGuestOrders} from "./lib/guestOrders";
-import {isProtectedStorefrontRoute, readRoute, renderStorefrontRoute, routeHash} from "./routes";
+import {isProtectedStorefrontRoute, readRoute, renderStorefrontRoute, routeHash, routeTitle} from "./routes";
 import {mapCatalogProduct} from "./lib/catalog";
+
+const AdminPanel = lazy(() => import("./ProtectedAdmin"));
+
+function RouteLoading() {
+  return (
+    <main className="catalog-status" role="status" aria-live="polite">
+      <span className="catalog-spinner" aria-hidden="true" />
+      <p>Menyiapkan halaman…</p>
+    </main>
+  );
+}
 
 export default function App() {
   const [route, setRoute] = useState(() => readRoute());
@@ -37,8 +47,14 @@ export default function App() {
   const [addresses, setAddresses] = useState([]);
   useEffect(() => {
     let active = true;
-    Promise.all([api.me(), api.profile(), api.addresses()])
-      .then(([session, profile, addressList]) => {
+    const loadSession = async () => {
+      try {
+        const session = await api.me();
+        if (!active) return;
+        const [profile, addressList] = await Promise.all([
+          api.profile(),
+          api.addresses(),
+        ]);
         if (!active) return;
         setUser({
           ...session.data,
@@ -64,8 +80,11 @@ export default function App() {
             isDefault: a.is_default,
           })),
         );
-      })
-      .catch(() => {});
+      } catch {
+        // Guest storefront tidak membutuhkan profil atau alamat customer.
+      }
+    };
+    loadSession();
     return () => {
       active = false;
     };
@@ -107,11 +126,15 @@ export default function App() {
   useEffect(() => {
     const sync = () => {
       setRoute(readRoute());
-      window.scrollTo({top: 0, behavior: "smooth"});
+      window.scrollTo({top: 0, behavior: "instant"});
     };
     window.addEventListener("hashchange", sync);
+    window.addEventListener("popstate", sync);
     if (!window.location.hash) window.history.replaceState(null, "", "#home");
-    return () => window.removeEventListener("hashchange", sync);
+    return () => {
+      window.removeEventListener("hashchange", sync);
+      window.removeEventListener("popstate", sync);
+    };
   }, []);
   useEffect(() => {
     if (isProtectedStorefrontRoute(page) && !user) {
@@ -120,14 +143,27 @@ export default function App() {
     }
   }, [page, user]);
   useEffect(() => {
-    mainRef.current?.focus();
+    const productName =
+      page === "product"
+        ? products.find((item) => item.slug === pageData.slug)?.name
+        : "";
+    document.title = routeTitle(route, productName);
+  }, [route, page, pageData.slug, products]);
+  useEffect(() => {
+    mainRef.current?.focus({preventScroll: true});
   }, [page]);
   const navigate = (next, data = {}) => {
     const target = routeHash(next, data);
     if (window.location.hash === target) {
       setRoute(readRoute());
-      window.scrollTo({top: 0, behavior: "smooth"});
-    } else window.location.hash = target;
+      window.scrollTo({top: 0, behavior: "instant"});
+      return;
+    }
+    // Commit immediately: waiting for animation frames inside a view-transition
+    // snapshot can stall navigation until the browser times the transition out.
+    window.history.pushState(null, "", target);
+    setRoute(readRoute(target));
+    window.scrollTo({top: 0, behavior: "instant"});
   };
   const applyServerCart = (payload) => {
     const token = payload.guest_token || guestCartToken;
@@ -296,11 +332,13 @@ export default function App() {
   const cartCount = cart.reduce((sum, i) => sum + i.qty, 0);
   if (page === "admin")
     return (
-      <AdminPanel
-        section={pageData.section}
-        navigate={(section) => navigate("admin", {section})}
-        onStorefront={() => navigate("home")}
-      />
+      <Suspense fallback={<RouteLoading />}>
+        <AdminPanel
+          section={pageData.section}
+          navigate={(section) => navigate("admin", {section})}
+          onStorefront={() => navigate("home")}
+        />
+      </Suspense>
     );
   const content = renderStorefrontRoute(page, {
     pageData, navigate, openProduct, products, catalogLoading, catalogError,
@@ -324,7 +362,7 @@ export default function App() {
         categories={[...new Set(products.map((product) => product.category))]}
       />
       <div id="main" className="main-focus" ref={mainRef} tabIndex="-1">
-        {content}
+        <Suspense key={page} fallback={<RouteLoading />}>{content}</Suspense>
       </div>
       <Footer />
     </div>
