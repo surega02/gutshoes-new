@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Models\ProductVariant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class AdminProductController extends Controller
 {
@@ -69,6 +71,7 @@ class AdminProductController extends Controller
     public function publish(Product $product): JsonResponse
     {
         abort_if($product->variants()->where('is_active', true)->doesntExist(), 422, 'Product requires an active variant.');
+        abort_if($product->images()->doesntExist(), 422, 'Product requires an image.');
         $product->update(['status' => 'PUBLISHED', 'published_at' => now()]);
 
         return response()->json(['data' => $product]);
@@ -98,11 +101,33 @@ class AdminProductController extends Controller
     /** @return array<string,mixed> */
     private function validated(Request $r, ?Product $p = null): array
     {
-        return $r->validate(['brand_id' => ['required', 'integer', 'exists:brands,id'], 'name' => ['required', 'string', 'max:255'], 'slug' => ['required', 'alpha_dash', 'max:255', 'unique:products,slug,'.($p instanceof Product ? $p->id : 'NULL')],
+        $validator = Validator::make($r->all(), ['brand_id' => ['required', 'integer', 'exists:brands,id'], 'name' => ['required', 'string', 'max:255'], 'slug' => ['required', 'alpha_dash', 'max:255', 'unique:products,slug,'.($p instanceof Product ? $p->id : 'NULL')],
             'description' => ['nullable', 'string', 'max:10000'], 'status' => ['sometimes', 'in:DRAFT,ARCHIVED'], 'category_ids' => ['required', 'array', 'min:1'], 'category_ids.*' => ['integer', 'exists:categories,id'],
-            'variants' => ['required', 'array', 'min:1'], 'variants.*.id' => ['nullable', 'integer', 'exists:product_variants,id'], 'variants.*.size_id' => ['required', 'integer', 'exists:sizes,id'],
-            'variants.*.sku' => ['required', 'string', 'max:100'], 'variants.*.price' => ['required', 'decimal:0,2', 'min:0'], 'variants.*.currency' => ['sometimes', 'string', 'size:3'],
+            'variants' => ['required', 'array', 'min:1'], 'variants.*.id' => ['nullable', 'integer', 'exists:product_variants,id'], 'variants.*.size_id' => ['required', 'integer', 'distinct', 'exists:sizes,id'],
+            'variants.*.sku' => ['required', 'string', 'max:100', 'distinct:ignore_case'], 'variants.*.price' => ['required', 'decimal:0,2', 'min:0'], 'variants.*.currency' => ['sometimes', 'string', 'size:3'],
             'variants.*.weight_grams' => ['required', 'integer', 'min:1', 'max:100000'], 'variants.*.is_active' => ['sometimes', 'boolean']]);
+
+        $validator->after(function ($validator) use ($r, $p): void {
+            foreach ((array) $r->input('variants', []) as $index => $variant) {
+                $id = isset($variant['id']) ? (int) $variant['id'] : null;
+                $sku = trim((string) ($variant['sku'] ?? ''));
+                if ($id && $p && ProductVariant::withTrashed()->whereKey($id)->where('product_id', '!=', $p->id)->exists()) {
+                    $validator->errors()->add("variants.{$index}.id", 'Varian tidak dimiliki oleh produk ini.');
+                }
+                if ($sku === '') {
+                    continue;
+                }
+                $query = ProductVariant::withTrashed()->whereRaw('LOWER(sku) = ?', [strtolower($sku)]);
+                if ($id) {
+                    $query->where('id', '!=', $id);
+                }
+                if ($query->exists()) {
+                    $validator->errors()->add("variants.{$index}.sku", "SKU {$sku} sudah digunakan oleh varian lain.");
+                }
+            }
+        });
+
+        return $validator->validate();
     }
 
     /** @param array<int,array<string,mixed>> $variants */

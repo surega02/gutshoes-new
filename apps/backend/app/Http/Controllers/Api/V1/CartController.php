@@ -56,7 +56,7 @@ class CartController extends Controller
     /** @return array<string,mixed> */
     private function payload(Cart $cart): array
     {
-        $cart->load('items.variant.product');
+        $cart->load(['items.variant.size', 'items.variant.inventories', 'items.variant.product.brand', 'items.variant.product.images']);
 
         return ['guest_token' => $cart->guest_token, 'items' => $cart->items, 'pricing' => $this->pricing->calculate($cart, null)];
     }

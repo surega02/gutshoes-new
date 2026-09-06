@@ -46,7 +46,15 @@
       "composer install",
       "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
       "@php artisan key:generate",
-      "@php artisan migrate --force"
+      "@php artisan migrate --force",
+      "@regions:sync"
+    ],
+    "regions:sync": [
+      "@php artisan regions:import --no-interaction"
+    ],
+    "deploy:database": [
+      "@php artisan migrate --force",
+      "@regions:sync"
     ],
     "dev": [
       "Composer\\Config::disableProcessTimeout",
@@ -75,7 +83,7 @@
       "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"
     ],
     "analyse": [
-      "phpstan analyse --memory-limit=1G"
+      "phpstan analyse -c vendor/larastan/larastan/extension.neon app routes --level=6 --memory-limit=1G"
     ],
     "format": [
       "pint"

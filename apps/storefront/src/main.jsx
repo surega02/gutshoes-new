@@ -1,13 +1,14 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import '@fontsource-variable/manrope';
-import './styles.css';
-import './hardening.css';
-import './auth.css';
-import './auth-fixes.css';
-import './admin.css';
-import './completion.css';
-import './admin-completion.css';
+import './assets/styles/styles.css';
+import './assets/styles/hardening.css';
+import './assets/styles/auth.css';
+import './assets/styles/auth-fixes.css';
+import './assets/styles/admin.css';
+import './assets/styles/completion.css';
+import './assets/styles/admin-completion.css';
+import './assets/styles/theme.css';
 import App from './App';
 
 createRoot(document.getElementById('root')).render(

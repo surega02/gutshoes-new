@@ -43,7 +43,9 @@ it('allows an admin to create and publish a complete product', function () {
     $size = Size::factory()->create();
     $payload = ['brand_id' => $brand->id, 'name' => 'Gut Runner', 'slug' => 'gut-runner', 'description' => 'Running shoe', 'status' => 'DRAFT', 'category_ids' => [$category->id],
         'variants' => [['size_id' => $size->id, 'sku' => 'GUT-RUN-42', 'price' => '599000.00', 'currency' => 'IDR', 'weight_grams' => 850, 'is_active' => true]]];
+    Storage::fake('public');
     $created = $this->actingAs($admin)->postJson('/api/v1/admin/products', $payload)->assertCreated();
+    $this->actingAs($admin)->post('/api/v1/admin/products/'.$created->json('data.id').'/images', ['image' => UploadedFile::fake()->image('shoe.webp', 600, 600), 'is_primary' => true], ['Accept' => 'application/json'])->assertCreated();
     $this->actingAs($admin)->postJson('/api/v1/admin/products/'.$created->json('data.id').'/publish')->assertOk()->assertJsonPath('data.status', 'PUBLISHED');
 });
 
@@ -54,4 +56,36 @@ it('validates and stores product images on the public disk', function () {
     $response = $this->actingAs($admin)->post('/api/v1/admin/products/'.$product->id.'/images', ['image' => UploadedFile::fake()->image('shoe.webp', 600, 600), 'alt_text' => 'Sepatu', 'is_primary' => true], ['Accept' => 'application/json']);
     $response->assertCreated();
     Storage::disk('public')->assertExists($response->json('data.path'));
+});
+
+it('returns validation errors instead of a database exception for duplicate variant SKUs', function () {
+    $admin = User::factory()->admin()->create();
+    $brand = Brand::factory()->create();
+    $category = Category::create(['name' => 'Training Duplicate', 'slug' => 'training-duplicate']);
+    $sizes = Size::factory()->count(2)->create();
+    $product = Product::factory()->create(['brand_id' => $brand->id]);
+    $variants = $sizes->map(fn ($size, $index) => ProductVariant::factory()->create([
+        'product_id' => $product->id,
+        'size_id' => $size->id,
+        'sku' => 'ORIGINAL-'.$index,
+    ]));
+    $payload = [
+        'brand_id' => $brand->id,
+        'name' => $product->name,
+        'slug' => $product->slug,
+        'status' => 'DRAFT',
+        'category_ids' => [$category->id],
+        'variants' => $variants->map(fn ($variant) => [
+            'id' => $variant->id,
+            'size_id' => $variant->size_id,
+            'sku' => 'VSP40',
+            'price' => '459000',
+            'weight_grams' => 900,
+            'is_active' => true,
+        ])->all(),
+    ];
+
+    $this->actingAs($admin)->putJson('/api/v1/admin/products/'.$product->id, $payload)
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('variants.1.sku');
 });

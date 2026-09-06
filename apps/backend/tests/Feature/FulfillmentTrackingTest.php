@@ -42,9 +42,15 @@ it('guards fulfillment sequence and queues shipment lifecycle email', function (
     $admin = User::factory()->create(['role' => UserRole::ADMIN]);
     $order = fulfillmentOrder();
     $url = "/api/v1/admin/orders/{$order->id}/fulfillment";
+    $this->actingAs($admin)->getJson("/api/v1/admin/orders/{$order->id}")->assertOk()
+        ->assertJsonPath('data.shipment.courier', 'jne')
+        ->assertJsonPath('data.customer_email', $order->customer_email);
     $this->actingAs($admin)->patchJson($url, ['status' => 'SHIPPED', 'tracking_number' => 'RESI-1'])->assertStatus(422);
     $this->actingAs($admin)->patchJson($url, ['status' => 'PROCESSING'])->assertOk()->assertJsonPath('data.status', 'PROCESSING');
     $this->actingAs($admin)->patchJson($url, ['status' => 'SHIPPED', 'tracking_number' => 'RESI-1'])->assertOk()->assertJsonPath('data.shipment.tracking_number', 'RESI-1');
+    $this->postJson('/api/v1/orders/track', ['order_number' => $order->order_number, 'email' => $order->customer_email])->assertOk()
+        ->assertJsonPath('data.status', 'SHIPPED')
+        ->assertJsonPath('data.shipment.tracking_number', 'RESI-1');
     $this->actingAs($admin)->patchJson($url, ['status' => 'DELIVERED'])->assertOk()->assertJsonPath('data.status', 'DELIVERED');
     Bus::assertDispatched(SendOrderEmail::class, 2);
 });

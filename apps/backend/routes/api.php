@@ -12,16 +12,22 @@ use App\Http\Controllers\Api\V1\CartController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\CheckoutQuoteController;
 use App\Http\Controllers\Api\V1\CustomerOrderController;
+use App\Http\Controllers\Api\V1\GuestOrderController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ReadinessController;
+use App\Http\Controllers\Api\V1\RegionController;
 use App\Http\Controllers\Api\V1\SessionController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
     Route::get('/health/ready', ReadinessController::class)->middleware('throttle:health');
     Route::get('/health', fn () => response()->json(['data' => ['status' => 'ok', 'service' => 'gutshoes-api', 'timestamp' => now()->utc()->toIso8601String()]]))->name('api.v1.health');
+    Route::get('/regions/provinces', [RegionController::class, 'provinces']);
+    Route::get('/regions/regencies', [RegionController::class, 'regencies']);
+    Route::get('/regions/districts', [RegionController::class, 'districts']);
+    Route::get('/regions/villages', [RegionController::class, 'villages']);
     Route::get('/products', [CatalogController::class, 'index']);
     Route::get('/products/{slug}', [CatalogController::class, 'show']);
     Route::post('/payments/midtrans/webhook', [PaymentController::class, 'webhook'])->middleware('throttle:webhooks');
@@ -35,6 +41,8 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
         Route::post('/checkout/quote', CheckoutQuoteController::class)->middleware('throttle:checkout');
         Route::post('/orders', [OrderController::class, 'store'])->middleware('throttle:checkout');
         Route::post('/orders/{orderNumber}/payment', [PaymentController::class, 'store'])->middleware('throttle:checkout');
+        Route::get('/guest/orders/{orderNumber}', [GuestOrderController::class, 'show'])->middleware('throttle:tracking');
+        Route::post('/guest/orders/{orderNumber}/payment', [GuestOrderController::class, 'payment'])->middleware('throttle:checkout');
         Route::post('/orders/{orderNumber}/cancel', [CancellationRefundController::class, 'cancel'])->middleware('throttle:checkout');
         Route::post('/admin/auth/login', [SessionController::class, 'adminLogin'])->middleware('throttle:auth');
         Route::middleware('auth:sanctum')->group(function (): void {
@@ -48,6 +56,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
             Route::prefix('admin')->middleware(['admin', 'audit.admin'])->group(function (): void {
                 Route::get('/dashboard', [AdminOperationsController::class, 'dashboard']);
                 Route::get('/orders', [AdminOperationsController::class, 'orders']);
+                Route::get('/orders/{order}', [AdminOperationsController::class, 'order']);
                 Route::get('/payments', [AdminOperationsController::class, 'payments']);
                 Route::get('/shipments', [AdminOperationsController::class, 'shipments']);
                 Route::get('/cancellations', [AdminOperationsController::class, 'cancellations']);
@@ -63,7 +72,11 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
                 Route::put('/vouchers/{voucher}', [AdminOperationsController::class, 'saveVoucher']);
                 Route::delete('/vouchers/{voucher}', [AdminOperationsController::class, 'deleteVoucher']);
                 Route::get('/inventories', [AdminOperationsController::class, 'inventories']);
+                Route::get('/inventory-options', [AdminOperationsController::class, 'inventoryOptions']);
+                Route::post('/inventories', [AdminOperationsController::class, 'createInventory']);
+                Route::get('/inventories/{inventory}/movements', [AdminOperationsController::class, 'inventoryMovements']);
                 Route::patch('/inventories/{inventory}/adjust', [AdminOperationsController::class, 'adjustInventory']);
+                Route::delete('/inventories/{inventory}', [AdminOperationsController::class, 'deleteInventory']);
                 Route::get('/configurations', [AdminOperationsController::class, 'configurations']);
                 Route::put('/configurations/{key}', [AdminOperationsController::class, 'updateConfiguration']);
                 Route::patch('/orders/{order}/fulfillment', [AdminFulfillmentController::class, 'update']);

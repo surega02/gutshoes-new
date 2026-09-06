@@ -183,6 +183,29 @@ paths:
         '201': { description: Snap transaction tersedia }
         '403': { description: Order bukan milik customer }
         '422': { description: Order tidak dapat dibayar }
+  /guest/orders/{orderNumber}:
+    get:
+      summary: Membaca snapshot order guest menggunakan token rahasia
+      tags: [Orders]
+      parameters:
+        - { in: path, name: orderNumber, required: true, schema: { type: string } }
+        - { in: header, name: X-Guest-Order-Token, required: true, schema: { type: string, minLength: 32 } }
+      responses:
+        '200': { description: Status, pembayaran, item, shipping, dan timeline order }
+        '404': { description: Order atau token tidak cocok }
+        '429': { description: Rate limited }
+  /guest/orders/{orderNumber}/payment:
+    post:
+      summary: Membuat atau menggunakan ulang sesi Midtrans untuk guest order
+      tags: [Payment]
+      parameters:
+        - { in: path, name: orderNumber, required: true, schema: { type: string } }
+        - { in: header, name: X-Guest-Order-Token, required: true, schema: { type: string, minLength: 32 } }
+      responses:
+        '201': { description: Snapshot order dan sesi Midtrans tersedia }
+        '404': { description: Order atau token tidak cocok }
+        '422': { description: Order sudah tidak dapat dibayar }
+        '429': { description: Rate limited }
   /payments/midtrans/webhook:
     post:
       summary: Menerima notifikasi pembayaran Midtrans terverifikasi

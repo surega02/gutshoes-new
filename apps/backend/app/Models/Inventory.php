@@ -15,25 +15,21 @@ class Inventory extends Model
 
     protected $guarded = [];
 
-    /** @return BelongsTo<Warehouse, $this> */
     public function warehouse(): BelongsTo
     {
         return $this->belongsTo(Warehouse::class);
     }
 
-    /** @return BelongsTo<ProductVariant, $this> */
     public function variant(): BelongsTo
     {
         return $this->belongsTo(ProductVariant::class, 'product_variant_id');
     }
 
-    /** @return HasMany<InventoryReservation, $this> */
     public function reservations(): HasMany
     {
         return $this->hasMany(InventoryReservation::class);
     }
 
-    /** @return HasMany<InventoryMovement, $this> */
     public function movements(): HasMany
     {
         return $this->hasMany(InventoryMovement::class);

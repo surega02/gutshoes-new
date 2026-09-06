@@ -11,6 +11,21 @@ use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
+function cartRegion(string $province, string $city): array
+{
+    static $i = 40;
+    $i++;
+    $p = (string) $i;
+    $r = "$p.01";
+    $d = "$r.01";
+    $v = "$d.2001";
+    DB::table('region_provinces')->insert(['code' => $p, 'name' => $province]);
+    DB::table('region_regencies')->insert(['code' => $r, 'province_code' => $p, 'name' => $city]);
+    DB::table('region_districts')->insert(['code' => $d, 'regency_code' => $r, 'name' => 'Test']);
+    DB::table('region_villages')->insert(['code' => $v, 'district_code' => $d, 'name' => 'Test', 'postal_code' => '12345']);
+
+    return ['province_code' => $p, 'regency_code' => $r, 'district_code' => $d, 'village_code' => $v];
+}
 
 it('creates an opaque guest cart token and reuses it', function () {
     $variant = ProductVariant::factory()->create(['price' => '100000.00']);
@@ -40,6 +55,19 @@ it('calculates shipping and free shipping voucher from server data', function ()
     $cart = Cart::create(['guest_token' => '00000000-0000-4000-8000-000000000002', 'status' => 'ACTIVE']);
     CartItem::create(['cart_id' => $cart->id, 'product_variant_id' => $variant->id, 'quantity' => 1]);
     Voucher::create(['code' => 'FREESHIP', 'name' => 'Free Shipping', 'type' => 'FREE_SHIPPING', 'value' => '0.00', 'minimum_amount' => '0.00', 'starts_at' => now()->subDay(), 'ends_at' => now()->addDay(), 'is_active' => true]);
-    $this->withHeader('X-Guest-Cart-Token', $cart->guest_token)->postJson('/api/v1/checkout/quote', ['destination_area_id' => 'destination', 'courier' => 'jne', 'service' => 'REG', 'voucher_code' => 'FREESHIP'])
+    $this->withHeader('X-Guest-Cart-Token', $cart->guest_token)->postJson('/api/v1/checkout/quote', ['destination_area_id' => 'destination', 'courier' => 'jne', 'service' => 'REG', 'voucher_code' => 'FREESHIP'] + cartRegion('DKI Jakarta', 'Jakarta Selatan'))
         ->assertOk()->assertJsonPath('data.pricing.shipping_fee', '20000.00')->assertJsonPath('data.pricing.voucher_discount', '20000.00')->assertJsonPath('data.pricing.grand_total', '150000.00');
 });
+it('charges regional shipping per cart item without using the provider', function (string $province, string $city, string $expected) {
+    Warehouse::factory()->create(['provider_area_id' => 'origin']);
+    $variant = ProductVariant::factory()->create(['price' => '150000.00', 'weight_grams' => 900]);
+    $cart = Cart::create(['guest_token' => fake()->uuid(), 'status' => 'ACTIVE']);
+    CartItem::create(['cart_id' => $cart->id, 'product_variant_id' => $variant->id, 'quantity' => 2]);
+    $this->withHeader('X-Guest-Cart-Token', $cart->guest_token)->postJson('/api/v1/checkout/quote', ['destination_area_id' => 'destination', 'service' => 'REG'] + cartRegion($province, $city))
+        ->assertOk()->assertJsonPath('data.shipping.provider', 'GUTSHOES_REGIONAL')->assertJsonPath('data.shipping.service', 'REGIONAL_PER_ITEM')->assertJsonPath('data.pricing.shipping_fee', $expected);
+})->with([
+    'Jawa Barat di luar Jabodetabek' => ['Jawa Barat', 'Bandung', '40000.00'],
+    'Sumatera' => ['Sumatera Utara', 'Medan', '60000.00'],
+    'Kalimantan' => ['Kalimantan Timur', 'Balikpapan', '80000.00'],
+    'Sulawesi' => ['Sulawesi Selatan', 'Makassar', '80000.00'],
+]);

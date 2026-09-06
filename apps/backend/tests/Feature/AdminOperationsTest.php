@@ -4,6 +4,8 @@ use App\Enums\UserRole;
 use App\Models\AuditLog;
 use App\Models\Inventory;
 use App\Models\Order;
+use App\Models\ProductVariant;
+use App\Models\Warehouse;
 use App\Models\StoreConfiguration;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -49,4 +51,28 @@ it('adjusts inventory through the domain engine and records its audit trail', fu
     $this->actingAs($admin)->patchJson("/api/v1/admin/inventories/{$inventory->id}/adjust", ['delta' => -2, 'reason' => 'Cycle count'])->assertOk()->assertJsonPath('data.on_hand', 3);
     $this->assertDatabaseHas('inventory_movements', ['inventory_id' => $inventory->id, 'type' => 'ADJUST']);
     expect(AuditLog::count())->toBe(1);
+});
+it('creates reads adjusts and safely deletes inventory records', function () {
+    $admin = User::factory()->create(['role' => UserRole::ADMIN]);
+    $warehouse = Warehouse::factory()->create();
+    $variant = ProductVariant::factory()->create();
+    $created = $this->actingAs($admin)->postJson('/api/v1/admin/inventories', [
+        'warehouse_id' => $warehouse->id,
+        'product_variant_id' => $variant->id,
+        'initial_stock' => 8,
+        'reason' => 'Penerimaan supplier',
+    ])->assertCreated()->assertJsonPath('data.on_hand', 8);
+    $inventoryId = $created->json('data.id');
+    $this->actingAs($admin)->getJson("/api/v1/admin/inventories/{$inventoryId}/movements")
+        ->assertOk()->assertJsonPath('data.0.type', 'ADD');
+    $this->actingAs($admin)->deleteJson("/api/v1/admin/inventories/{$inventoryId}")->assertUnprocessable();
+
+    $emptyVariant = ProductVariant::factory()->create();
+    $empty = $this->actingAs($admin)->postJson('/api/v1/admin/inventories', [
+        'warehouse_id' => $warehouse->id,
+        'product_variant_id' => $emptyVariant->id,
+        'initial_stock' => 0,
+        'reason' => 'Pendaftaran lokasi stok',
+    ])->assertCreated();
+    $this->actingAs($admin)->deleteJson('/api/v1/admin/inventories/'.$empty->json('data.id'))->assertOk();
 });

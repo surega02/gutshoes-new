@@ -1,0 +1,9 @@
+{
+  "dataset": "gutshoes-region-master",
+  "files": {
+    "provinces.csv": {"rows": 38, "sha256": "b4c69dca93d2bd361147b7450b3185e1e9cd696709b696d060f4f108e58a7aa6"},
+    "regencies.csv": {"rows": 514, "sha256": "ecbf69f7704f0b50bb22ccec7a2685cd65b7f1cc6274433cd369d8d26a6f09b2"},
+    "districts.csv": {"rows": 7285, "sha256": "6d182288238577aefd32f225c131b9499600ad8fc6fb5c8b59678103c543611f"},
+    "villages.csv": {"rows": 83762, "sha256": "28425c25f9f375aa11d6a0ceb78874c0865a2787ebb57c44dc2a4fd573ef613b"}
+  }
+}

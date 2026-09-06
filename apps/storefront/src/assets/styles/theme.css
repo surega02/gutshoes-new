@@ -1,0 +1,58 @@
+:root {
+  --action-on-soft: #006f9f;
+  --surface-info: #e9f8fd;
+  --surface-success: #e9f8f2;
+  --surface-danger: #fff0ed;
+  --danger-ink: #73443e;
+  --google-blue: #2a5ca8;
+  --field-disabled: #f2f4f5;
+  --focus-ring: #8bddf3;
+  --selection-bg: #b9ecfa;
+  --selection-ink: #052334;
+}
+
+::selection {
+  background: var(--selection-bg);
+  color: var(--selection-ink);
+}
+
+:focus-visible {
+  outline-color: var(--focus-ring);
+}
+
+.login-copy .back-link,
+.auth-route strong {
+  color: var(--action-on-soft);
+}
+
+.notice.success,
+.history-item .order-state.done,
+.status-symbol.success,
+.guest-order-status.status-paid,
+.guest-order-status.status-processing,
+.guest-order-status.status-shipped,
+.guest-order-status.status-delivered {
+  background: var(--surface-success);
+}
+
+.notice.error,
+.logout-confirm,
+.delete-confirm,
+.guest-order-status.status-cancelled,
+.guest-order-status.status-expired,
+.guest-order-status.status-unavailable {
+  background: var(--surface-danger);
+}
+
+.logout-confirm p,
+.delete-confirm p {
+  color: var(--danger-ink);
+}
+
+.google-mark {
+  color: var(--google-blue);
+}
+
+.profile-form input:disabled {
+  background: var(--field-disabled);
+}

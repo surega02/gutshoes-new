@@ -13,9 +13,9 @@ uses(RefreshDatabase::class);
 
 it('keeps release-critical routes represented by the OpenAPI contract', function () {
     $contract = file_get_contents(base_path('../../docs/api/openapi.yaml'));
-    expect($contract)->toContain('/products:', '/orders:', '/payments/midtrans/webhook:', '/orders/track:', '/admin/dashboard:');
+    expect($contract)->toContain('/products:', '/orders:', '/guest/orders/{orderNumber}:', '/guest/orders/{orderNumber}/payment:', '/payments/midtrans/webhook:', '/orders/track:', '/admin/dashboard:');
     $routes = collect(Route::getRoutes()->getRoutes())->map(fn ($route) => $route->uri())->all();
-    expect($routes)->toContain('api/v1/products', 'api/v1/orders', 'api/v1/payments/midtrans/webhook', 'api/v1/orders/track', 'api/v1/admin/dashboard');
+    expect($routes)->toContain('api/v1/products', 'api/v1/orders', 'api/v1/guest/orders/{orderNumber}', 'api/v1/guest/orders/{orderNumber}/payment', 'api/v1/payments/midtrans/webhook', 'api/v1/orders/track', 'api/v1/admin/dashboard');
 });
 
 it('reports database and cache readiness without exposing credentials', function () {

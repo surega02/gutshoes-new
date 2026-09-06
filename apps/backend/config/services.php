@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'storefront' => ['url' => env('STOREFRONT_URL', 'http://localhost:5173')],
     'midtrans' => [
         'driver' => env('MIDTRANS_DRIVER', 'fake'),
         'server_key' => env('MIDTRANS_SERVER_KEY'),

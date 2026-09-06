@@ -1,34 +1,168 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { api } from './api';
-import { rupiah } from './data';
-import logoGutShoes from './assets/logo-gutshoes.png';
+import React, {useEffect, useRef, useState} from "react";
+import {api} from "./api";
+import {forgetAdminSession} from "./lib/adminSession";
+import logoGutShoes from "./assets/logo-gutshoes.png";
+import {nav} from "./admin/config";
+import Icon from "./admin/components/Icon";
+import {getAdminRoute} from "./routes";
 
-const Icon=({name,size=19})=>{const paths={dashboard:<><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></>,box:<><path d="m4 7 8-4 8 4-8 4-8-4ZM4 7v10l8 4 8-4V7M12 11v10"/></>,layers:<><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 17l9 5 9-5"/></>,warehouse:<><path d="M3 21V8l9-5 9 5v13M7 21v-8h10v8M7 17h10"/></>,orders:<><path d="M6 3h12v18H6zM9 8h6M9 12h6M9 16h4"/></>,users:<><circle cx="9" cy="8" r="4"/><path d="M2 21c.5-4 2.8-6 7-6s6.5 2 7 6M16 4a4 4 0 0 1 0 8M18 15c2.5.5 3.8 2.5 4 6"/></>,tag:<><path d="M20 13 13 20 4 11V4h7l9 9Z"/><circle cx="8" cy="8" r="1"/></>,settings:<><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H3v-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V3h4v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></>,audit:<><path d="M4 4h16v16H4zM8 9h8M8 13h8M8 17h5"/></>,search:<><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></>,bell:<><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></>,plus:<path d="M12 5v14M5 12h14"/>,arrow:<path d="m9 18 6-6-6-6"/>,check:<path d="m5 12 4 4L19 6"/>,close:<path d="M6 6l12 12M18 6 6 18"/>,external:<><path d="M14 4h6v6M20 4l-9 9"/><path d="M18 13v7H4V6h7"/></>,menu:<path d="M4 7h16M4 12h16M4 17h16"/>};return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>};
-const nav=[['dashboard','dashboard','Ikhtisar'],['products','box','Produk'],['catalog','layers','Katalog'],['inventory','warehouse','Stok & gudang'],['orders','orders','Pesanan'],['customers','users','Pelanggan'],['promotions','tag','Promosi'],['settings','settings','Pengaturan'],['audit','audit','Audit log']];
-const titles={dashboard:['Ikhtisar','Pantau pekerjaan penting dan kesehatan toko hari ini.'],products:['Produk','Kelola produk, varian, harga, dan status publikasi.'],catalog:['Katalog','Atur merek dan kategori yang membentuk navigasi toko.'],inventory:['Stok & gudang','Pantau ketersediaan setiap varian dan pergerakan stok.'],orders:['Pesanan','Proses pesanan, pembayaran, pengiriman, pembatalan, dan refund.'],customers:['Pelanggan','Lihat pelanggan dan riwayat aktivitas belanja mereka.'],promotions:['Promosi','Kelola voucher, periode aktif, dan batas penggunaan.'],settings:['Pengaturan toko','Atur identitas, operasional, dan kebijakan toko.'],audit:['Audit log','Lacak tindakan administratif yang mengubah data toko.']};
-const Badge=({children,tone})=><span className={`adm-badge ${tone||''}`}>{children}</span>;
-const Button=({children,kind='primary',...props})=><button className={`adm-button ${kind}`} {...props}>{children}</button>;
-const Empty=({title='Tidak ada data',text='Coba ubah pencarian atau filter yang digunakan.'})=><div className="adm-empty"><Icon name="search" size={30}/><h3>{title}</h3><p>{text}</p></div>;
-const statusTone=s=>s.includes('diperlukan')||s.includes('Refund')?'danger':s.includes('Lunas')||s.includes('Dikirim')||s.includes('Aktif')?'success':s.includes('Menunggu')?'warning':'info';
-function useAdminResource(loader){const [state,setState]=useState({loading:true,error:'',data:null});const [attempt,setAttempt]=useState(0);useEffect(()=>{let active=true;setState(previous=>({...previous,loading:true,error:''}));loader().then(response=>{if(active)setState({loading:false,error:'',data:response.data})}).catch(error=>{if(active)setState({loading:false,error:error.message||'Server admin tidak dapat dijangkau.',data:null})});return()=>{active=false}},[attempt]);return {...state,retry:()=>setAttempt(value=>value+1)}}
-function ResourceState({loading,error,retry}){if(loading)return <div className="adm-resource-state" role="status">Memuat data operasional…</div>;if(error)return <div className="adm-resource-state error" role="alert"><span>{error}</span><Button kind="secondary" onClick={retry}>Coba lagi</Button></div>;return null}
-const serverList=data=>Array.isArray(data)?data:(data?.data||[]);
+export default function AdminPanel({
+  section = "dashboard",
+  navigate,
+  onStorefront,
+}) {
+  const [rail, setRail] = useState(false);
+  const [orderCount, setOrderCount] = useState(null);
+  const navRef = useRef(null);
+  const activeRoute = getAdminRoute(section);
+  const valid = activeRoute.section;
+  const content = activeRoute.render({navigate});
+  useEffect(() => {
+    let active = true;
+    const loadOrderCount = () =>
+      api
+        .dashboard()
+        .then(({data}) => {
+          if (!active) return;
+          const orders = data?.orders || {};
+          setOrderCount(
+            Number(orders.pending_payment || 0) +
+              Number(orders.paid || 0) +
+              Number(orders.processing || 0),
+          );
+        })
+        .catch(() => {});
+    loadOrderCount();
+    const interval = window.setInterval(loadOrderCount, 60000);
+    window.addEventListener("focus", loadOrderCount);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      window.removeEventListener("focus", loadOrderCount);
+    };
+  }, []);
+  useEffect(() => {
+    const navElement = navRef.current;
+    if (!navElement) return undefined;
+    const keepActiveVisible = () => {
+      const active = navElement.querySelector("button.active");
+      if (navElement.scrollHeight <= navElement.clientHeight + 2) {
+        navElement.scrollTop = 0;
+      } else if (active) {
+        const top = active.offsetTop;
+        const bottom = top + active.offsetHeight;
+        if (top < navElement.scrollTop) navElement.scrollTop = Math.max(0, top - 8);
+        if (bottom > navElement.scrollTop + navElement.clientHeight) navElement.scrollTop = bottom - navElement.clientHeight + 8;
+      }
+    };
+    keepActiveVisible();
+    window.addEventListener("resize", keepActiveVisible);
+    const observer = new ResizeObserver(keepActiveVisible);
+    observer.observe(navElement);
+    return () => {
+      window.removeEventListener("resize", keepActiveVisible);
+      observer.disconnect();
+    };
+  }, [valid]);
+  return (
+    <div className={`admin-app ${rail ? "rail-open" : ""}`}>
+      <a className="skip-link" href="#admin-main">
+        Lewati ke konten admin
+      </a>
+      <aside className="adm-sidebar">
+        <div className="adm-brand">
+          <img src={logoGutShoes} alt="GutShoes" />
+          <span>ADMIN</span>
+        </div>
+        <nav ref={navRef} aria-label="Navigasi admin">
+          {nav.map(([id, icon, label]) => (
+            <button
+              key={id}
+              aria-label={id === "orders" && orderCount ? `${label}, ${orderCount} perlu ditangani` : label}
+              className={valid === id ? "active" : ""}
+              aria-current={valid === id ? "page" : undefined}
+              onClick={() => {
+                navigate(id);
+                setRail(false);
+              }}
+            >
+              <Icon name={icon} />
+              <span>{label}</span>
+              {id === "orders" && orderCount > 0 && (
+                <b aria-hidden="true">{orderCount > 99 ? "99+" : orderCount}</b>
+              )}
+            </button>
+          ))}
+        </nav>
+        <div className="adm-sidebar-bottom">
+          <button onClick={onStorefront}>
+            <Icon name="external" />
+            <span>Lihat storefront</span>
+          </button>
+          <div className="adm-admin">
+            <span>AD</span>
+            <div>
+              <strong>Administrator</strong>
+              <small>Sesi aktif</small>
+            </div>
+            <button
+              className="adm-logout"
+              onClick={async () => {
+                forgetAdminSession();
+                try {
+                  await api.logout();
+                } finally {
+                  window.location.reload();
+                }
+              }}
+            >
+              Keluar
+            </button>
+          </div>
+        </div>
+      </aside>
+      {rail && (
+        <button
+          className="adm-scrim"
+          onClick={() => setRail(false)}
+          aria-label="Tutup menu"
+        />
+      )}
+      <div className="adm-workspace">
+        <header className="adm-topbar">
+          <button
+            className="adm-menu"
+            onClick={() => setRail(true)}
+            aria-label="Buka menu"
+          >
+            <Icon name="menu" />
+          </button>
+          <label>
+            <Icon name="search" />
+            <input placeholder="Cari pesanan, SKU, atau pelanggan" />
+          </label>
+          <div>
+            <button
+              aria-label="Buka pesanan yang perlu ditangani"
+              className="adm-notification"
+              onClick={() => navigate("orders")}
+            >
+              <Icon name="bell" />
+              <span />
+            </button>
+            <span className="adm-live">
+              <i /> Sistem normal
+            </span>
+          </div>
+        </header>
+        <main id="admin-main" tabIndex="-1">
+          {content}
+        </main>
+      </div>
+    </div>
+  );
+}
 
-function PageHead({section,action,onAction}){const [title,description]=titles[section]||titles.dashboard;return <div className="adm-page-head"><div><p className="adm-eyebrow">ADMIN / {title.toUpperCase()}</p><h1>{title}</h1><p>{description}</p></div>{action&&<Button onClick={onAction}><Icon name="plus"/> {action}</Button>}</div>}
-function Metric({label,value,delta,attention}){return <article className={`adm-metric ${attention?'attention':''}`}><span>{label}</span><strong>{value}</strong><small>{delta}</small></article>}
-function Dashboard({navigate}){const resource=useAdminResource(api.dashboard);const data=resource.data||{};const orders=data.orders||{};return <><PageHead section="dashboard"/><ResourceState {...resource}/>{!resource.loading&&!resource.error&&<><section className="adm-metrics"><Metric label="Pendapatan terbayar" value={rupiah(Number(data.revenue?.paid_total||0))} delta="Akumulasi pesanan terkonfirmasi"/><Metric label="Menunggu pembayaran" value={orders.pending_payment||0} delta="Belum dibayar"/><Metric label="Perlu diproses" value={(orders.paid||0)+(orders.processing||0)} delta="Lunas atau sedang diproses"/><Metric label="Stok rendah" value={data.low_stock_count||0} delta={'Ambang '+(data.low_stock_threshold||0)+' unit'}/></section><section className="adm-card adm-priority"><div className="adm-card-head"><div><h2>Fokus operasional</h2><p>Data langsung dari server.</p></div></div><button onClick={()=>navigate('orders')}><span className="adm-priority-icon info"><Icon name="orders"/></span><span><strong>Kelola pesanan aktif</strong><small>{orders.paid||0} pesanan lunas menunggu tindak lanjut</small></span><b>{orders.paid||0}</b><Icon name="arrow"/></button><button onClick={()=>navigate('inventory')}><span className="adm-priority-icon warning"><Icon name="warehouse"/></span><span><strong>Periksa stok rendah</strong><small>Ambang peringatan {data.low_stock_threshold||0} unit</small></span><b>{data.low_stock_count||0}</b><Icon name="arrow"/></button></section></>}</>}
-function OrdersTable({rows,onOpen}){return <div className="adm-table-wrap"><table><thead><tr><th>Pesanan</th><th>Pelanggan</th><th>Pembayaran</th><th>Status</th><th className="num">Total</th><th><span className="sr-only">Aksi</span></th></tr></thead><tbody>{rows.map(o=><tr key={o.id}><td><strong>{o.id}</strong><small>{o.time}</small></td><td>{o.customer}</td><td><Badge tone={statusTone(o.payment)}>{o.payment}</Badge></td><td><Badge tone={statusTone(o.status)}>{o.status}</Badge></td><td className="num"><strong>{rupiah(o.total)}</strong></td><td><button className="adm-row-action" onClick={()=>onOpen?.(o)} aria-label={`Buka ${o.id}`}><Icon name="arrow"/></button></td></tr>)}</tbody></table></div>}
-function DataToolbar({query,setQuery,filter,setFilter,options=['Semua status','Aktif','Draf']}){return <div className="adm-toolbar"><label className="adm-search"><Icon name="search"/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Cari data…" aria-label="Cari data"/></label><select value={filter} onChange={e=>setFilter(e.target.value)} aria-label="Filter status">{options.map(x=><option key={x}>{x}</option>)}</select></div>}
-function ProductsPage(){const [query,setQuery]=useState('');const [filter,setFilter]=useState('Semua status');const resource=useAdminResource(()=>api.adminProducts({search:query,status:filter==='Semua status'?'':filter,per_page:100}));const rows=serverList(resource.data);return <><PageHead section="products"/><DataToolbar {...{query,setQuery,filter,setFilter}} options={['Semua status','DRAFT','PUBLISHED','ARCHIVED']}/><ResourceState {...resource}/>{!resource.loading&&!resource.error&&<section className="adm-card adm-table-card">{rows.length?<div className="adm-table-wrap"><table><thead><tr><th>Produk</th><th>Status</th><th>Varian</th><th>Kategori</th><th className="num">Harga mulai</th></tr></thead><tbody>{rows.map(item=><tr key={item.id}><td><strong>{item.name}</strong><small>{item.brand?.name||'Tanpa merek'}</small></td><td><Badge tone={item.status==='PUBLISHED'?'success':'warning'}>{item.status}</Badge></td><td>{item.variants?.length||0}</td><td>{item.categories?.map(category=>category.name).join(', ')||'—'}</td><td className="num"><strong>{item.variants?.length?rupiah(Math.min(...item.variants.map(variant=>Number(variant.price)))):'—'}</strong></td></tr>)}</tbody></table></div>:<Empty title="Produk tidak ditemukan"/>}</section>}</>}
 
-function CatalogPage(){const resource=useAdminResource(()=>Promise.all([api.adminCategories(),api.adminBrands()]).then(([categories,brands])=>({data:{categories:serverList(categories.data),brands:serverList(brands.data)}})));return <><PageHead section="catalog"/><ResourceState {...resource}/>{!resource.loading&&!resource.error&&<div className="adm-two-col"><section className="adm-card adm-list-card"><div className="adm-card-head"><div><h2>Kategori</h2><p>{resource.data.categories.length} kategori dari server</p></div></div>{resource.data.categories.map(item=><div className="adm-simple-row" key={item.id}><span><strong>{item.name}</strong><small>{item.slug}</small></span><Badge tone="success">Aktif</Badge></div>)}</section><section className="adm-card adm-list-card"><div className="adm-card-head"><div><h2>Merek</h2><p>{resource.data.brands.length} merek dari server</p></div></div>{resource.data.brands.map(item=><div className="adm-simple-row" key={item.id}><span><strong>{item.name}</strong><small>{item.slug}</small></span><Badge tone="success">Aktif</Badge></div>)}</section></div>}</>}
-function InventoryPage(){const [query,setQuery]=useState('');const [filter,setFilter]=useState('Semua stok');const resource=useAdminResource(()=>api.inventories({per_page:100}));const rows=serverList(resource.data).map(item=>({id:item.id,sku:item.variant?.sku||'—',product:item.variant?.product?.name||'Produk',size:item.variant?.size?.name||'—',stock:Number(item.on_hand||0)-Number(item.reserved||0),reserved:Number(item.reserved||0),warehouse:item.warehouse?.name||'Gudang'})).filter(item=>[item.product,item.sku].join(' ').toLowerCase().includes(query.toLowerCase())).filter(item=>filter==='Semua stok'||(filter==='Stok rendah'&&item.stock>0&&item.stock<=5)||(filter==='Habis'&&item.stock===0)||(filter==='Tersedia'&&item.stock>5));return <><PageHead section="inventory"/><DataToolbar {...{query,setQuery,filter,setFilter}} options={['Semua stok','Stok rendah','Habis','Tersedia']}/><ResourceState {...resource}/>{!resource.loading&&!resource.error&&<section className="adm-card adm-table-card">{rows.length?<div className="adm-table-wrap"><table><thead><tr><th>Varian</th><th>SKU</th><th>Gudang</th><th className="num">Tersedia</th><th className="num">Dicadangkan</th><th>Status</th></tr></thead><tbody>{rows.map(item=><tr key={item.id}><td><strong>{item.product}</strong><small>Ukuran {item.size}</small></td><td><code>{item.sku}</code></td><td>{item.warehouse}</td><td className="num"><strong>{item.stock}</strong></td><td className="num">{item.reserved}</td><td><Badge tone={item.stock===0?'danger':item.stock<=5?'warning':'success'}>{item.stock===0?'Habis':item.stock<=5?'Stok rendah':'Tersedia'}</Badge></td></tr>)}</tbody></table></div>:<Empty title="Varian tidak ditemukan"/>}</section>}</>}
-function OrdersPage(){const [query,setQuery]=useState('');const [filter,setFilter]=useState('Semua pesanan');const [selected,setSelected]=useState(null);const resource=useAdminResource(()=>api.adminOrders({per_page:100}));const rows=serverList(resource.data).map(order=>({raw:order,id:order.order_number,customer:order.customer_name||order.customer_email||'Guest',time:new Date(order.created_at).toLocaleString('id-ID'),total:Number(order.grand_total||0),payment:order.payment?.status||'Belum ada',status:order.status})).filter(order=>[order.id,order.customer].join(' ').toLowerCase().includes(query.toLowerCase())).filter(order=>filter==='Semua pesanan'||order.status===filter);return <><PageHead section="orders"/><DataToolbar {...{query,setQuery,filter,setFilter}} options={['Semua pesanan','PENDING_PAYMENT','PAID','PROCESSING','SHIPPED','DELIVERED','CANCELLED']}/><ResourceState {...resource}/>{!resource.loading&&!resource.error&&<section className="adm-card adm-table-card">{rows.length?<OrdersTable rows={rows} onOpen={setSelected}/>:<Empty title="Pesanan tidak ditemukan"/>}</section>}{selected&&<OrderDrawer order={selected} onClose={()=>setSelected(null)}/>}</>}
-function OrderDrawer({order,onClose}){const [status,setStatus]=useState(order.status);const [action,setAction]=useState('');const [notice,setNotice]=useState('');const apply=async event=>{event.preventDefault();try{if(action==='cancel'){await api.cancel(order.id,{reason:event.currentTarget.querySelector('textarea')?.value||'Permintaan administrator'},crypto.randomUUID());setStatus('CANCELLED')}else{const next=action==='shipment'?'SHIPPED':'PROCESSING';await api.fulfillOrder(order.raw.id,{status:next,tracking_number:event.currentTarget.querySelector('input')?.value||null});setStatus(next)}setNotice('Perubahan pesanan tersimpan di server.');setAction('')}catch(error){setNotice(error.message||'Perubahan pesanan gagal disimpan.')}};return <div className="adm-overlay" role="presentation" onMouseDown={e=>e.target===e.currentTarget&&onClose()} onKeyDown={e=>e.key==='Escape'&&onClose()}><aside className="adm-drawer" role="dialog" aria-modal="true" aria-labelledby="order-detail-title"><header><div><small>DETAIL PESANAN</small><h2 id="order-detail-title">{order.id}</h2></div><button autoFocus onClick={onClose} aria-label="Tutup"><Icon name="close"/></button></header>{notice&&<div className="adm-success"><Icon name="check"/>{notice}</div>}<div className="adm-drawer-status"><Badge tone={statusTone(order.payment)}>{order.payment}</Badge><Badge tone={statusTone(status)}>{status}</Badge></div><section><h3>Pelanggan</h3><p><strong>{order.customer}</strong><br/>nadia@example.com · 0812 3456 7890</p></section><section><h3>Produk & snapshot</h3><div className="adm-line-item"><span><strong>Stride Flow</strong><small>SKU GS-1042-NAVY · Ukuran 42 × 1 · Harga tersimpan</small></span><strong>{rupiah(699000)}</strong></div></section><section><h3>Pengiriman</h3><p>JNE Reguler · Jakarta Selatan<br/><small>{status==='Dikirim'?'Resi JNE0123456789':'Estimasi 2–4 hari kerja · Resi belum tersedia'}</small></p></section><section><h3>Aksi operasional</h3><div className="adm-action-grid"><button onClick={()=>setAction('process')}>Mulai proses</button><button onClick={()=>setAction('shipment')}>Tambah pengiriman</button><button onClick={()=>setAction('cancel')}>Batalkan pesanan</button></div></section>{action&&<form className="adm-inline-action" onSubmit={apply}><strong>{action==='shipment'?'Data pengiriman':action==='refund'?'Buat refund terpisah':action==='cancel'?'Konfirmasi pembatalan':'Ubah status ke PROCESSING'}</strong>{action==='shipment'&&<><label>Kurir<select><option>JNE Reguler</option><option>J&T Express</option></select></label><label>Nomor resi<input required defaultValue="JNE0123456789"/></label></>}{action==='cancel'&&<label>Alasan pembatalan<textarea required defaultValue="Permintaan pelanggan"/></label>}<div><Button kind="secondary" type="button" onClick={()=>setAction('')}>Batal</Button><Button type="submit">Konfirmasi</Button></div></form>}<div className="adm-total"><span>Total pembayaran</span><strong>{rupiah(order.total)}</strong></div><footer><Button kind="secondary" onClick={onClose}>Tutup</Button></footer></aside></div>}
-function CustomersPage(){const [query,setQuery]=useState('');const [filter,setFilter]=useState('Semua pelanggan');const resource=useAdminResource(()=>api.adminCustomers({per_page:100}));const rows=serverList(resource.data).filter(item=>[item.name||'',item.email].join(' ').toLowerCase().includes(query.toLowerCase()));return <><PageHead section="customers"/><DataToolbar {...{query,setQuery,filter,setFilter}} options={['Semua pelanggan']}/><ResourceState {...resource}/>{!resource.loading&&!resource.error&&<section className="adm-card adm-table-card">{rows.length?<div className="adm-table-wrap"><table><thead><tr><th>Pelanggan</th><th>Verifikasi email</th><th>Bergabung</th><th>Status</th></tr></thead><tbody>{rows.map(item=><tr key={item.id}><td><strong>{item.name||'Pelanggan'}</strong><small>{item.email}</small></td><td>{item.email_verified_at?'Terverifikasi':'Belum'}</td><td>{new Date(item.created_at).toLocaleDateString('id-ID')}</td><td><Badge tone="success">Aktif</Badge></td></tr>)}</tbody></table></div>:<Empty text="Belum ada pelanggan tersimpan."/>}</section>}</>}
-function PromotionsPage(){const resource=useAdminResource(()=>Promise.all([api.adminPromotions({per_page:100}),api.adminVouchers({per_page:100})]).then(([promotions,vouchers])=>({data:[...serverList(promotions.data).map(item=>({...item,kind:'Promosi'})),...serverList(vouchers.data).map(item=>({...item,kind:'Voucher'}))]})));const rows=resource.data||[];return <><PageHead section="promotions"/><ResourceState {...resource}/>{!resource.loading&&!resource.error&&<section className="adm-card adm-table-card">{rows.length?<div className="adm-table-wrap"><table><thead><tr><th>Nama / kode</th><th>Jenis</th><th>Nilai</th><th>Berakhir</th><th>Status</th></tr></thead><tbody>{rows.map(item=><tr key={[item.kind,item.id].join('-')}><td><strong>{item.code||item.name}</strong><small>{item.kind}</small></td><td>{item.type}</td><td className="num">{item.type==='PERCENTAGE'?item.value+'%':rupiah(Number(item.value||0))}</td><td>{new Date(item.ends_at).toLocaleDateString('id-ID')}</td><td><Badge tone={item.is_active?'success':'warning'}>{item.is_active?'Aktif':'Nonaktif'}</Badge></td></tr>)}</tbody></table></div>:<Empty text="Belum ada promosi atau voucher tersimpan."/>}</section>}</>}
-function SettingsForm({items,reload}){const [saving,setSaving]=useState(false);const [notice,setNotice]=useState('');const submit=async event=>{event.preventDefault();setSaving(true);setNotice('');const form=new FormData(event.currentTarget);try{await Promise.all(items.map(item=>api.updateConfiguration(item.key,{value:form.get(item.key),is_public:Boolean(item.is_public)})));setNotice('Pengaturan tersimpan di server.');reload()}catch(error){setNotice(error.message||'Pengaturan gagal disimpan.')}finally{setSaving(false)}};return <form className="adm-settings" onSubmit={submit}><section className="adm-card"><h2>Konfigurasi operasional</h2><p>Nilai berikut dibaca dan disimpan langsung ke database.</p><div className="adm-form-grid">{items.map(item=><label key={item.key}>{item.key.replaceAll('_',' ')}<input name={item.key} defaultValue={String(item.value??'')} required/></label>)}</div></section><div className="adm-sticky-save"><span role="status">{notice}</span><Button type="submit" disabled={saving} aria-busy={saving}>{saving?'Menyimpan…':'Simpan pengaturan'}</Button></div></form>}
-function SettingsPage(){const resource=useAdminResource(api.adminConfigurations);const items=serverList(resource.data);return <><PageHead section="settings"/><ResourceState {...resource}/>{!resource.loading&&!resource.error&&(items.length?<SettingsForm items={items} reload={resource.retry}/>:<Empty text="Belum ada konfigurasi toko di database."/>)}</>}
-function AuditPage(){const [query,setQuery]=useState('');const [filter,setFilter]=useState('Semua tindakan');const resource=useAdminResource(()=>api.adminAuditLogs({per_page:100}));const rows=serverList(resource.data).filter(item=>[item.action,item.entity_type||''].join(' ').toLowerCase().includes(query.toLowerCase()));return <><PageHead section="audit"/><DataToolbar {...{query,setQuery,filter,setFilter}} options={['Semua tindakan']}/><ResourceState {...resource}/>{!resource.loading&&!resource.error&&<section className="adm-card adm-table-card">{rows.length?<div className="adm-table-wrap"><table><thead><tr><th>Waktu</th><th>Admin</th><th>Tindakan</th><th>Objek</th><th>IP</th></tr></thead><tbody>{rows.map(item=><tr key={item.id}><td>{new Date(item.created_at).toLocaleString('id-ID')}</td><td>{item.admin_id||'Sistem'}</td><td><strong>{item.action}</strong></td><td>{item.entity_type?item.entity_type+' #'+(item.entity_id||'—'):'—'}</td><td><code>{item.ip_address||'—'}</code></td></tr>)}</tbody></table></div>:<Empty text="Belum ada mutasi admin yang tercatat."/>}</section>}</>}
 
-export default function AdminPanel({section='dashboard',navigate,onStorefront}){const [rail,setRail]=useState(false);const valid=nav.some(([id])=>id===section)?section:'dashboard';const content=useMemo(()=>({dashboard:<Dashboard navigate={navigate}/>,products:<ProductsPage/>,catalog:<CatalogPage/>,inventory:<InventoryPage/>,orders:<OrdersPage/>,customers:<CustomersPage/>,promotions:<PromotionsPage/>,settings:<SettingsPage/>,audit:<AuditPage/>})[valid],[valid]);return <div className={`admin-app ${rail?'rail-open':''}`}><a className="skip-link" href="#admin-main">Lewati ke konten admin</a><aside className="adm-sidebar"><div className="adm-brand"><img src={logoGutShoes} alt="GutShoes"/><span>ADMIN</span></div><nav aria-label="Navigasi admin">{nav.map(([id,icon,label])=><button key={id} aria-label={label} className={valid===id?'active':''} aria-current={valid===id?'page':undefined} onClick={()=>{navigate(id);setRail(false)}}><Icon name={icon}/><span>{label}</span>{id==='orders'&&<b>3</b>}</button>)}</nav><div className="adm-sidebar-bottom"><button onClick={onStorefront}><Icon name="external"/><span>Lihat storefront</span></button><div className="adm-admin"><span>AD</span><div><strong>Administrator</strong><small>Sesi aktif</small></div><button className="adm-logout" onClick={async()=>{await api.logout();window.location.reload()}}>Keluar</button></div></div></aside>{rail&&<button className="adm-scrim" onClick={()=>setRail(false)} aria-label="Tutup menu"/>}<div className="adm-workspace"><header className="adm-topbar"><button className="adm-menu" onClick={()=>setRail(true)} aria-label="Buka menu"><Icon name="menu"/></button><label><Icon name="search"/><input placeholder="Cari pesanan, SKU, atau pelanggan"/></label><div><button aria-label="Buka pesanan yang perlu ditangani" className="adm-notification" onClick={()=>navigate('orders')}><Icon name="bell"/><span/></button><span className="adm-live"><i/> Sistem normal</span></div></header><main id="admin-main" tabIndex="-1">{content}</main></div></div>}
+

@@ -12,9 +12,11 @@ class Order extends Model
 {
     protected $guarded = [];
 
+    protected $hidden = ['guest_access_token', 'guest_access_token_hash', 'payload_hash', 'idempotency_key'];
+
     protected function casts(): array
     {
-        return ['status' => OrderStatus::class, 'subtotal' => 'decimal:2', 'grand_total' => 'decimal:2', 'expires_at' => 'datetime'];
+        return ['status' => OrderStatus::class, 'subtotal' => 'decimal:2', 'grand_total' => 'decimal:2', 'expires_at' => 'datetime', 'guest_access_token' => 'encrypted'];
     }
 
     /** @return BelongsTo<User, $this> */

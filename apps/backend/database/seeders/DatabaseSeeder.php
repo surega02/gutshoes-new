@@ -11,18 +11,14 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->call(RegionSeeder::class);
+
         if (app()->isProduction()) {
-            $this->command?->warn('Development seeder dilewati di production.');
+            $this->command?->warn('Fixture development dilewati di production.');
 
             return;
         }
 
-        $warehouse = Warehouse::factory()->create(['code' => 'JKT-DEV-01', 'name' => 'Gudang Development Jakarta']);
-        ProductVariant::factory()->count(12)->create()->each(
-            fn (ProductVariant $variant) => Inventory::factory()->create([
-                'warehouse_id' => $warehouse->id,
-                'product_variant_id' => $variant->id,
-            ])
-        );
+        $this->call(CatalogDemoSeeder::class);
     }
 }

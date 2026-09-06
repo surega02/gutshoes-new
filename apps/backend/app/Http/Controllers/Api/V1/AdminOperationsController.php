@@ -6,6 +6,9 @@ use App\Domain\Inventory\InventoryService;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Inventory;
+use App\Models\InventoryMovement;
+use App\Models\ProductVariant;
+use App\Models\Warehouse;
 use App\Models\Order;
 use App\Models\OrderCancellation;
 use App\Models\Payment;
@@ -36,6 +39,11 @@ class AdminOperationsController extends Controller
     public function orders(Request $request): JsonResponse
     {
         return $this->listing(Order::query()->with(['payment', 'shipment']), $request, ['status', 'customer_email', 'order_number'], 'created_at');
+    }
+
+    public function order(Order $order): JsonResponse
+    {
+        return response()->json(['data' => $order->load(['items', 'addresses', 'payment', 'shipment', 'statusHistories'])]);
     }
 
     public function payments(Request $request): JsonResponse
@@ -80,14 +88,52 @@ class AdminOperationsController extends Controller
 
     public function inventories(Request $request): JsonResponse
     {
-        return $this->listing(Inventory::query()->with(['warehouse', 'variant.product']), $request, ['warehouse_id', 'product_variant_id'], 'updated_at');
+        return $this->listing(Inventory::query()->with(['warehouse', 'variant.product', 'variant.size']), $request, ['warehouse_id', 'product_variant_id'], 'updated_at');
+    }
+
+    public function inventoryOptions(): JsonResponse
+    {
+        return response()->json(['data' => [
+            'warehouses' => Warehouse::query()->where('is_active', true)->orderBy('name')->get(['id', 'code', 'name']),
+            'variants' => ProductVariant::query()->where('is_active', true)->with(['product:id,name', 'size:id,label,value'])->orderBy('sku')->get(['id', 'product_id', 'size_id', 'sku']),
+        ]]);
+    }
+
+    public function createInventory(Request $request, InventoryService $service): JsonResponse
+    {
+        $data = $request->validate([
+            'warehouse_id' => ['required', 'integer', 'exists:warehouses,id'],
+            'product_variant_id' => ['required', 'integer', 'exists:product_variants,id', Rule::unique('inventories')->where(fn ($query) => $query->where('warehouse_id', $request->integer('warehouse_id')))],
+            'initial_stock' => ['required', 'integer', 'min:0', 'max:1000000'],
+            'reason' => ['required', 'string', 'max:255'],
+        ]);
+        $inventory = Inventory::create(['warehouse_id' => $data['warehouse_id'], 'product_variant_id' => $data['product_variant_id'], 'on_hand' => 0, 'reserved' => 0, 'sold' => 0]);
+        if ($data['initial_stock'] > 0) {
+            $service->add($inventory, $data['initial_stock'], $data['reason'], $request->user());
+        }
+
+        return response()->json(['data' => $inventory->refresh()->load(['warehouse', 'variant.product', 'variant.size'])], 201);
+    }
+
+    public function inventoryMovements(Inventory $inventory): JsonResponse
+    {
+        return response()->json(['data' => $inventory->movements()->with('actor:id,name,email')->latest()->limit(50)->get()]);
     }
 
     public function adjustInventory(Request $request, Inventory $inventory, InventoryService $service): JsonResponse
     {
         $data = $request->validate(['delta' => ['required', 'integer', 'not_in:0'], 'reason' => ['required', 'string', 'max:255']]);
+        $updated = $service->adjust($inventory, $data['delta'], $data['reason'], $request->user());
 
-        return response()->json(['data' => $service->adjust($inventory, $data['delta'], $data['reason'], $request->user())]);
+        return response()->json(['data' => $updated->load(['warehouse', 'variant.product', 'variant.size'])]);
+    }
+
+    public function deleteInventory(Inventory $inventory): JsonResponse
+    {
+        abort_if($inventory->on_hand > 0 || $inventory->reserved > 0 || $inventory->sold > 0 || InventoryMovement::where('inventory_id', $inventory->id)->exists(), 422, 'Inventory with stock or movement history cannot be deleted. Set it to zero and retain it for audit.');
+        $inventory->delete();
+
+        return response()->json(['data' => ['deleted' => true]]);
     }
 
     public function configurations(): JsonResponse

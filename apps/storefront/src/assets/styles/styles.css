@@ -59,3 +59,27 @@
   .section__heading h2{font-size:1.75rem}
   .section__heading p{font-size:.78rem;margin-top:.35rem}
 }
+
+/* The cart needs more room than the global mobile breakpoint provides. */
+@media(max-width:900px){
+  .cart-layout{grid-template-columns:minmax(0,1fr);gap:2rem}
+  .order-summary{position:static}
+}
+
+/* Cart reflow: keep every action in a stable, touch-friendly area below 768px. */
+@media(max-width:767px){
+  .cart-item{grid-template-columns:clamp(72px,24vw,90px) minmax(0,1fr) 44px;grid-template-areas:"image info remove" "image quantity quantity";gap:.9rem 1rem;align-items:start;padding:1.25rem 0}
+  .cart-item>img{grid-area:image;width:100%;height:auto;aspect-ratio:1/1}
+  .cart-item__info{grid-area:info;min-width:0}
+  .cart-item__info h2,.cart-action-error{overflow-wrap:anywhere}
+  .quantity{grid-area:quantity;width:max-content;margin-top:.1rem}
+  .quantity button,.remove{width:44px;height:44px}
+  .quantity span{width:40px}
+  .remove{grid-area:remove;justify-self:end}
+}
+
+/* Checkout summary follows its content instead of stretching with the form column. */
+.checkout-layout>.order-summary{
+  align-self:start;
+  height:fit-content;
+}

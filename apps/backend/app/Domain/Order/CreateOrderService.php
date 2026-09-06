@@ -4,8 +4,8 @@ namespace App\Domain\Order;
 
 use App\Domain\Inventory\InventoryService;
 use App\Domain\Promotion\PricingService;
-use App\Domain\Shipping\ShippingProvider;
 use App\Domain\Shipping\ShippingQuote;
+use App\Domain\Shipping\ShippingRateResolver;
 use App\Enums\OrderStatus;
 use App\Jobs\SendOrderEmail;
 use App\Models\Cart;
@@ -21,7 +21,7 @@ use Illuminate\Support\Str;
 
 class CreateOrderService
 {
-    public function __construct(private readonly PricingService $pricing, private readonly ShippingProvider $shipping, private readonly InventoryService $inventory) {}
+    public function __construct(private readonly PricingService $pricing, private readonly ShippingRateResolver $shipping, private readonly InventoryService $inventory, private readonly GuestOrderAccess $guestAccess) {}
 
     /** @param array<string,mixed> $payload */
     public function create(?Cart $cart, array $payload, string $idempotencyKey): CreateOrderResult
@@ -48,8 +48,8 @@ class CreateOrderService
             $warehouse = Warehouse::where('is_active', true)->lockForUpdate()->firstOrFail();
             $weight = (int) $cart->items->sum(fn ($item) => $item->variant->weight_grams * $item->quantity);
             $quantity = (int) $cart->items->sum('quantity');
-            $quotes = $this->shipping->quote(['provider_area_id' => $warehouse->provider_area_id], ['provider_area_id' => $payload['address']['provider_area_id']], $weight, $quantity, $payload['shipping']['courier'] ?? null);
-            $quote = collect($quotes)->first(fn (ShippingQuote $item) => $item->service === $payload['shipping']['service']);
+            $quotes = $this->shipping->quotes(['provider_area_id' => $warehouse->provider_area_id], $payload['address'], $weight, $quantity, $payload['shipping']['courier'] ?? null);
+            $quote = count($quotes) === 1 && $quotes[0]->service === 'REGIONAL_PER_ITEM' ? $quotes[0] : collect($quotes)->first(fn (ShippingQuote $item) => $item->service === $payload['shipping']['service']);
             if (! $quote instanceof ShippingQuote) {
                 throw new DomainException('Selected shipping service is unavailable.');
             }
@@ -82,6 +82,7 @@ class CreateOrderService
                 VoucherUsage::create(['voucher_id' => $voucher->id, 'user_id' => $cart->user_id, 'order_id' => $order->id, 'discount_amount' => $totals['voucher_discount']]);
             }
             $cart->update(['status' => 'CONVERTED']);
+            $this->guestAccess->issue($order);
             Bus::dispatch(new SendOrderEmail($order->id, 'order_created'));
 
             return new CreateOrderResult($this->loaded($order), true);
