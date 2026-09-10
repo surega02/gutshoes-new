@@ -29,6 +29,13 @@ class OrderController extends Controller
         $payload['address'] = app(RegionAddressResolver::class)->resolve($payload['address']);
         $key = $request->header('Idempotency-Key');
         abort_unless(is_string($key) && strlen($key) >= 16 && strlen($key) <= 128, 422, 'A valid Idempotency-Key header is required.');
+        // Scope retries to the authenticated owner or the unguessable guest cart token.
+        $owner = $request->user() ? 'user:'.$request->user()->id : 'guest:'.$request->header('X-Guest-Cart-Token');
+        abort_unless($request->user() || filled($request->header('X-Guest-Cart-Token')), 422);
+        $key = hash('sha256', $owner.'|'.$key);
+        if ($request->user()) {
+            $payload['customer']['email'] = $request->user()->email;
+        }
         $cart = $resolver->resolve($request, false);
         $result = $orders->create($cart, $payload, $key);
 

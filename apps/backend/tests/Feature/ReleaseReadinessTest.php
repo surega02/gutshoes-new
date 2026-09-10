@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Order\GuestOrderAccess;
 use App\Domain\Payment\MidtransProvider;
 use App\Jobs\SendOrderEmail;
 use App\Models\EmailDelivery;
@@ -22,10 +23,15 @@ it('reports database and cache readiness without exposing credentials', function
     $this->getJson('/api/v1/health/ready')->assertOk()->assertJsonPath('data.status', 'ready')->assertJsonMissing(['password'])->assertJsonMissing(['secret']);
 });
 
-it('does not persist a partial payment when provider times out', function () {
+it('persists an uncertain payment intent when provider times out', function () {
     $this->app->bind(MidtransProvider::class, fn () => new class implements MidtransProvider
     {
         public function createSnapTransaction(Order $order): array
+        {
+            throw new RuntimeException('Provider timeout');
+        }
+
+        public function closeTransaction(Order $order, string $action): array
         {
             throw new RuntimeException('Provider timeout');
         }
@@ -39,8 +45,10 @@ it('does not persist a partial payment when provider times out', function () {
     $order = Order::create(['order_number' => 'GS-FAIL-0001', 'warehouse_id' => $warehouse->id, 'customer_email' => 'failure@example.test', 'customer_name' => 'Failure', 'customer_phone' => '08123',
         'status' => 'PENDING_PAYMENT', 'subtotal' => '100.00', 'product_discount' => '0.00', 'voucher_discount' => '0.00', 'shipping_fee' => '0.00', 'grand_total' => '100.00',
         'currency' => 'IDR', 'idempotency_key' => 'failure-key-00000001', 'payload_hash' => str_repeat('f', 64), 'expires_at' => now()->addDay()]);
-    $this->postJson("/api/v1/orders/{$order->order_number}/payment", ['email' => $order->customer_email])->assertStatus(500);
-    $this->assertDatabaseCount('payments', 0);
+    $token = app(GuestOrderAccess::class)->issue($order);
+    $this->withHeader('X-Guest-Order-Token', $token)->postJson("/api/v1/orders/{$order->order_number}/payment", ['email' => $order->customer_email])->assertStatus(500);
+    $this->assertDatabaseCount('payments', 1);
+    $this->assertDatabaseHas('payments', ['order_id' => $order->id, 'snap_token' => null, 'initialization_state' => 'uncertain']);
 });
 
 it('retries an order email without delivering it twice', function () {

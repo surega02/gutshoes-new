@@ -13,7 +13,7 @@ function Checkout({
   createOrder,
   user,
   addresses,
-  guestCartToken,
+  onCheckoutCreated,
   cartSource,
   ensureServerCart,
 }) {
@@ -29,7 +29,12 @@ function Checkout({
   const [error, setError] = useState("");
   const [invalidFields, setInvalidFields] = useState([]);
   const checkoutFormRef = useRef(null);
-  const [demoOrderReady, setDemoOrderReady] = useState(false);
+  const attemptStorageKey = "gutshoes-checkout-" + (user?.id || "guest");
+  const orderAttempt = useRef(null);
+  if (!orderAttempt.current) {
+    try { orderAttempt.current = JSON.parse(sessionStorage.getItem(attemptStorageKey)); } catch { /* Ignore invalid local state. */ }
+  }
+  const submittingOrder = useRef(false);
   const shippingOptions = [
     {
       service: "REG",
@@ -96,15 +101,7 @@ function Checkout({
     setError("");
     setInvalidFields([]);
     try {
-      if (cartSource !== "api" || !guestCartToken) {
-        setMode("demo");
-        setPricing(null);
-        setAppliedVoucher(code);
-        setError(
-          "Cart belum tersimpan di Laravel. Quote ini hanya simulasi lokal dan tidak dapat menjadi order nyata.",
-        );
-        return true;
-      }
+      if (cartSource !== "api") throw new Error("Keranjang belum siap. Muat ulang lalu coba lagi.");
       const serverCart = await ensureServerCart();
       const response = await api.quote(
         quotePayload(service, code),
@@ -122,15 +119,6 @@ function Checkout({
       setAppliedVoucher(code);
       return true;
     } catch (err) {
-      if (isBackendUnavailable(err)) {
-        setMode("demo");
-        setPricing(null);
-        setAppliedVoucher(code);
-        setError(
-          "API Laravel belum tersedia. Checkout beralih ke simulasi lokal; tidak ada order, reservasi stok, voucher, ongkir, atau pembayaran nyata yang dibuat.",
-        );
-        return true;
-      }
       setPricing(null);
       setInvalidFields(Object.keys(err?.errors || {}));
       setError(
@@ -192,16 +180,6 @@ function Checkout({
     setBuyer(nextBuyer);
     setError("");
     setOperation("quote");
-    if (cartSource !== "api" || !guestCartToken) {
-      setMode("demo");
-      setPricing(null);
-      setError(
-        "Backend belum memiliki cart ini. Checkout dilanjutkan sebagai demo tanpa quote, order, stok, atau pembayaran nyata.",
-      );
-      setStep(2);
-      setOperation("");
-      return;
-    }
     try {
       const serverCart = await ensureServerCart();
       const response = await api.quote(
@@ -229,21 +207,8 @@ function Checkout({
       setMode("api");
       setStep(2);
     } catch (err) {
-      if (isBackendUnavailable(err)) {
-        setMode("demo");
-        setPricing(null);
-        setError(
-          "API Laravel belum tersedia. Anda dapat meninjau checkout demo, tetapi tidak ada transaksi nyata yang akan dibuat.",
-        );
-        setStep(2);
-      } else {
-        setError(
-          messageFor(
-            err,
-            "Backend menolak keranjang atau alamat ini. Periksa stok dan data tujuan.",
-          ),
-        );
-      }
+      setPricing(null);
+      setError(messageFor(err, "Ongkir belum dapat diperiksa. Coba lagi; checkout belum dilanjutkan."));
     } finally {
       setOperation("");
     }
@@ -281,23 +246,28 @@ function Checkout({
     voucher_code: appliedVoucher || null,
   };
   const submitOrder = async () => {
-    if (operation || !buyer || mode === "demo") return;
+    if (submittingOrder.current || operation || (!orderAttempt.current && (!buyer || mode !== "api" || !pricing))) return;
+    submittingOrder.current = true;
     setOperation("order");
     setError("");
-    setDemoOrderReady(false);
+
     try {
-      const serverCart = await ensureServerCart();
-      const created = await api.checkout(
-        orderPayload,
-        serverCart.token,
-        crypto.randomUUID(),
-      );
+      // Keep the exact request and key when the response is lost. Do not create a new order.
+      if (!orderAttempt.current) {
+        const serverCart = await ensureServerCart();
+        orderAttempt.current = {payload: orderPayload, token: serverCart.token, key: crypto.randomUUID()};
+        sessionStorage.setItem(attemptStorageKey, JSON.stringify(orderAttempt.current));
+      }
+      const attempt = orderAttempt.current;
+      const created = await api.checkout(attempt.payload, attempt.token, attempt.key);
+      sessionStorage.removeItem(attemptStorageKey);
+      orderAttempt.current = null;
       const accessToken = created.data.guest_access_token || "";
       const customerType = user ? "customer" : "guest";
       const orderData = {
         number: created.data.order_number,
         total: Number(created.data.grand_total),
-        email: buyer.email,
+        email: created.data.customer_email,
         accessToken,
         customerType,
         source: "api",
@@ -315,7 +285,7 @@ function Checkout({
         const payment =
           customerType === "guest"
             ? await api.createGuestPayment(orderData.number, accessToken)
-            : await api.createCustomerPayment(orderData.number, buyer.email);
+            : await api.createCustomerPayment(orderData.number, orderData.email);
         createOrder({
           ...orderData,
           redirectUrl: payment.data.redirect_url,
@@ -331,36 +301,32 @@ function Checkout({
           ),
         });
       }
+      onCheckoutCreated();
       navigate("payment");
     } catch (err) {
-      if (isBackendUnavailable(err)) {
-        setDemoOrderReady(true);
-        setError(
-          "Backend terputus sebelum order dibuat. Tidak ada order yang diasumsikan berhasil. Anda dapat membuka hasil simulasi tanpa pembayaran.",
-        );
-      } else {
-        setError(
-          messageFor(
-            err,
-            "Order ditolak backend. Stok, ongkir, voucher, dan alamat perlu diperiksa kembali.",
-          ),
-        );
+      if (err.status === 422) {
+        orderAttempt.current = null;
+        sessionStorage.removeItem(attemptStorageKey);
       }
+      setError(isBackendUnavailable(err)
+        ? "Status pembuatan pesanan belum pasti. Tekan coba lagi untuk memeriksa permintaan yang sama; jangan membuat pesanan baru."
+        : messageFor(err, "Pesanan belum dapat dibuat. Periksa data lalu coba lagi."));
     } finally {
+      submittingOrder.current = false;
       setOperation("");
     }
   };
-  const openDemoOrder = () => {
-    const suffix = String(Date.now()).slice(-6);
-    createOrder({
-      number: `DEMO-${suffix}`,
-      total: fallbackPricing.grand_total,
-      email: buyer.email,
-      source: "demo",
-      paymentStatus: "demo",
-    });
-    navigate("payment");
-  };
+
+  if (orderAttempt.current && !buyer) return (
+    <main className="checkout-page">
+      <h1>Periksa pesanan sebelumnya</h1>
+      <p>Hasil permintaan sebelumnya belum diterima. Periksa kembali sebelum membuat pesanan baru.</p>
+      <Feedback>{error}</Feedback>
+      <Button onClick={submitOrder} disabled={Boolean(operation)}>
+        {operation ? "Memeriksa pesanan…" : "Periksa pesanan"}
+      </Button>
+    </main>
+  );
 
   if (!cart.length)
     return (
@@ -663,11 +629,7 @@ function Checkout({
                 </p>
               </div>
               <Feedback>{error}</Feedback>
-              {demoOrderReady && (
-                <Button variant="secondary" onClick={openDemoOrder}>
-                  Buka hasil simulasi tanpa pembayaran
-                </Button>
-              )}
+
               <div className="form-actions">
                 <Button
                   variant="ghost"
@@ -693,9 +655,7 @@ function Checkout({
                     )}
                   </Button>
                 ) : (
-                  <Button onClick={openDemoOrder}>
-                    Lanjutkan simulasi <Icon name="arrow" />
-                  </Button>
+                  <Button disabled>Pembayaran belum tersedia</Button>
                 )}
               </div>
             </div>

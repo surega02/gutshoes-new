@@ -34,6 +34,7 @@ function csrfToken() {
 export async function csrf() {
   const response = await fetch(`${BACKEND_BASE}/sanctum/csrf-cookie`, {
     credentials: "include",
+    signal: AbortSignal.timeout(20000),
     headers: {Accept: "application/json"},
   });
   if (!response.ok)
@@ -58,6 +59,7 @@ async function request(path, options = {}, retried = false) {
   try {
     response = await fetch(`${API_BASE}${path}`, {
       ...options,
+      signal: options.signal || AbortSignal.timeout(20000),
       headers,
       credentials: "include",
       body:
@@ -119,6 +121,7 @@ export const api = {
     request(`/orders?${new URLSearchParams(params).toString()}`),
   order: (number) => request(`/orders/${encodeURIComponent(number)}`),
   track: (data) => request("/orders/track", {method: "POST", body: data}),
+  claimCart: (cartToken) => request("/cart/claim", {method: "POST", headers: {"X-Guest-Cart-Token": cartToken}}),
   cart: (cartToken) =>
     request("/cart", {
       headers: cartToken ? {"X-Guest-Cart-Token": cartToken} : {},
@@ -149,7 +152,7 @@ export const api = {
   checkout: (data, cartToken, key) =>
     request("/orders", {
       method: "POST",
-      headers: {"X-Guest-Cart-Token": cartToken, "Idempotency-Key": key},
+      headers: {...(cartToken ? {"X-Guest-Cart-Token": cartToken} : {}), "Idempotency-Key": key},
       body: data,
     }),
   guestOrder: (number, token) =>
@@ -166,10 +169,10 @@ export const api = {
       method: "POST",
       body: {email},
     }),
-  cancel: (number, data, key) =>
+  cancel: (number, data, key, guestToken) =>
     request(`/orders/${encodeURIComponent(number)}/cancel`, {
       method: "POST",
-      headers: {"Idempotency-Key": key},
+      headers: {"Idempotency-Key": key, ...(guestToken ? {"X-Guest-Order-Token": guestToken} : {})},
       body: data,
     }),
   dashboard: () => request("/admin/dashboard"),

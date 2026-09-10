@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Inventory\InventoryService;
+use App\Domain\Order\GuestOrderAccess;
 use App\Models\Inventory;
 use App\Models\Order;
 use App\Models\Payment;
@@ -21,6 +22,12 @@ function payableOrder(): array
         'subtotal' => '100000.00', 'product_discount' => '0.00', 'voucher_discount' => '0.00', 'shipping_fee' => '20000.00',
         'grand_total' => '120000.00', 'currency' => 'IDR', 'idempotency_key' => fake()->uuid(), 'payload_hash' => str_repeat('a', 64), 'expires_at' => now()->addDay()]);
     app(InventoryService::class)->reserve($inventory, $order, 1);
+    $order->items()->create(['product_variant_id' => $variant->id, 'product_name' => 'Runner', 'brand_name' => 'Brand',
+        'sku' => $variant->sku, 'size_label' => '42', 'unit_price' => '100000.00', 'discount_amount' => '0.00',
+        'quantity' => 1, 'line_total' => '100000.00', 'weight_grams' => 500]);
+
+    app(GuestOrderAccess::class)->issue($order);
+    test()->withHeader('X-Guest-Order-Token', $order->guest_access_token);
 
     return compact('order', 'inventory');
 }

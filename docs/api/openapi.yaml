@@ -48,6 +48,16 @@ paths:
       security: [{ sanctum: [] }]
       responses:
         '200': { description: Logged out }
+  /cart/claim:
+    post:
+      summary: Menggabungkan cart guest ke cart akun satu kali
+      security: [{ sanctum: [] }]
+      parameters:
+        - { in: header, name: X-Guest-Cart-Token, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { description: Cart akun; guest_token null dan token lama tidak mengakses item yang dialihkan }
+        '401': { description: Login diperlukan }
+        '422': { description: Token guest diperlukan }
   /profile:
     get:
       summary: Detail profil customer
@@ -175,13 +185,15 @@ paths:
         '422': { description: Cart, stok, voucher, alamat, atau shipping tidak valid }
   /orders/{orderNumber}/payment:
     post:
+      security: [{ sanctum: [] }, { guestOrderToken: [] }]
+      description: Pemilik customer atau admin; guest wajib token akses pesanan. Email bukan kredensial. Intent uncertain tidak diinisiasi ulang otomatis.
       summary: Membuat atau menggunakan ulang transaksi Midtrans Snap
       tags: [Payment]
       parameters:
         - { in: path, name: orderNumber, required: true, schema: { type: string } }
       responses:
         '201': { description: Snap transaction tersedia }
-        '403': { description: Order bukan milik customer }
+        '404': { description: Order tidak ditemukan atau kredensial bukan milik pemilik }
         '422': { description: Order tidak dapat dibayar }
   /guest/orders/{orderNumber}:
     get:
@@ -240,12 +252,23 @@ paths:
       responses: { '200': { description: Status diperbarui }, '403': { description: Admin required }, '422': { description: Transisi tidak valid } }
   /orders/{orderNumber}/cancel:
     post:
+      security: [{ sanctum: [] }, { guestOrderToken: [] }]
+      description: Pemilik customer atau admin; guest wajib token. Pengulangan tidak menggandakan pembatalan/refund. Provider harus memastikan tagihan ditutup sebelum stok dilepas.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, maxLength: 255 }
       summary: Membatalkan order pending payment atau paid
       tags: [Cancellation]
       parameters:
         - { in: path, name: orderNumber, required: true, schema: { type: string } }
         - { in: header, name: Idempotency-Key, required: true, schema: { type: string, minLength: 16, maxLength: 128 } }
-      responses: { '201': { description: Cancellation approved dan refund pending bila paid }, '422': { description: Status tidak dapat dibatalkan } }
+      responses: { '201': { description: Cancellation approved dan refund pending bila paid }, '404': { description: Kredensial tidak memiliki akses }, '500': { description: Status provider belum pasti dan reservasi dipertahankan }, '422': { description: Status tidak dapat dibatalkan } }
   /admin/refunds/{refund}/process:
     post:
       summary: Memproses atau menggunakan ulang refund Midtrans
@@ -295,6 +318,10 @@ paths:
       responses: { '200': { description: Dependency siap }, '503': { description: Dependency degraded } }
 components:
   securitySchemes:
+    guestOrderToken:
+      type: apiKey
+      in: header
+      name: X-Guest-Order-Token
     sanctum:
       type: apiKey
       in: cookie

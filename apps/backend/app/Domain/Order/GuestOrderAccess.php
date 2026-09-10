@@ -30,6 +30,9 @@ class GuestOrderAccess
 
     public function authorize(Request $request, Order $order): void
     {
+        if ($order->user_id !== null) {
+            abort_unless($request->user()?->id === $order->user_id, 404);
+        }
         $token = $request->header('X-Guest-Order-Token');
         if (! is_string($token) || strlen($token) < 32 || ! is_string($order->guest_access_token_hash) ||
             ! hash_equals($order->guest_access_token_hash, hash('sha256', $token))) {

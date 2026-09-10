@@ -21,6 +21,6 @@ class RegionAddressResolver
             throw new DomainException('Kombinasi wilayah alamat tidak valid. Pilih ulang wilayah secara berurutan.');
         }
 
-        return $data + ['province' => $p->name, 'city' => $r->name, 'district' => $d->name, 'village' => $v->name, 'postal_code' => $v->postal_code ?: ($data['postal_code'] ?? ''), 'provider_area_id' => $data['provider_area_id'] ?? $v->code];
+        return array_replace($data, ['province' => $p->name, 'city' => $r->name, 'district' => $d->name, 'village' => $v->name, 'postal_code' => $v->postal_code ?: ($data['postal_code'] ?? ''), 'provider_area_id' => $data['provider_area_id'] ?? $v->code]);
     }
 }

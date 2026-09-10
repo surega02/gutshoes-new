@@ -25,7 +25,7 @@ class ProcessMidtransWebhook
             throw new InvalidWebhookSignature;
         }
         $hash = hash('sha256', json_encode($payload, JSON_THROW_ON_ERROR));
-        $eventId = hash('sha256', implode('|', [$payload['transaction_id'] ?? '', $payload['transaction_status'] ?? '', $payload['status_code'] ?? '', $payload['settlement_time'] ?? $payload['transaction_time'] ?? '']));
+        $eventId = hash('sha256', implode('|', [$payload['order_id'] ?? '', $payload['transaction_id'] ?? '', $payload['transaction_status'] ?? '', $payload['fraud_status'] ?? '', $payload['status_code'] ?? '', $payload['settlement_time'] ?? $payload['transaction_time'] ?? '']));
         if ($existing = PaymentWebhook::where('event_id', $eventId)->first()) {
             return $existing;
         }
@@ -47,16 +47,11 @@ class ProcessMidtransWebhook
                 throw new DomainException('Payment record not found.');
             }
             $status = (string) ($payload['transaction_status'] ?? '');
-            $success = $status === 'settlement' || ($status === 'capture' && ($payload['fraud_status'] ?? 'accept') === 'accept');
-            if ($success && $order->getRawOriginal('status') === OrderStatus::PENDING_PAYMENT->value) {
-                $payment->update(['status' => strtoupper($status), 'provider_transaction_id' => $payload['transaction_id'] ?? $payment->provider_transaction_id, 'paid_at' => now()]);
-                foreach (InventoryReservation::where('order_id', $order->id)->where('status', ReservationStatus::ACTIVE->value)->get() as $reservation) {
-                    $this->inventory->sell($reservation);
-                }
-                $order->update(['status' => OrderStatus::PAID->value]);
-                $order->statusHistories()->create(['from_status' => OrderStatus::PENDING_PAYMENT->value, 'to_status' => OrderStatus::PAID->value, 'note' => 'Midtrans payment confirmed']);
-                Bus::dispatch(new SendOrderEmail($order->id, 'payment_success'));
-            } elseif (in_array($status, ['expire', 'cancel', 'deny'], true) && $order->getRawOriginal('status') === OrderStatus::PENDING_PAYMENT->value) {
+            $success = $status === 'settlement' || ($status === 'capture' && ($payload['fraud_status'] ?? '') === 'accept');
+            app(ConfirmPayment::class)->validate($order, $payment, $payload);
+            if ($success) {
+                app(ConfirmPayment::class)->apply($order, $payment, $payload);
+            } elseif (in_array($status, ['expire', 'cancel'], true) && $order->getRawOriginal('status') === OrderStatus::PENDING_PAYMENT->value) {
                 $payment->update(['status' => strtoupper($status), 'provider_transaction_id' => $payload['transaction_id'] ?? $payment->provider_transaction_id]);
                 foreach (InventoryReservation::where('order_id', $order->id)->where('status', ReservationStatus::ACTIVE->value)->get() as $reservation) {
                     $this->inventory->release($reservation, ReservationStatus::EXPIRED);

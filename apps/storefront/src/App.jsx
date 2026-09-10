@@ -33,9 +33,7 @@ export default function App() {
   const [guestCartToken, setGuestCartToken] = useState(
     () => sessionStorage.getItem("gutshoes-guest-cart") || "",
   );
-  const [cartSource, setCartSource] = useState(() =>
-    sessionStorage.getItem("gutshoes-guest-cart") ? "api" : "demo",
-  );
+  const [cartSource, setCartSource] = useState("api");
   const [cartLoading, setCartLoading] = useState(false);
   const [cartError, setCartError] = useState("");
   const [cartActions, setCartActions] = useState({});
@@ -44,6 +42,9 @@ export default function App() {
   const [catalogError, setCatalogError] = useState("");
   const mainRef = useRef(null);
   const [user, setUser] = useState(null);
+  const [sessionReady, setSessionReady] = useState(false);
+  const [sessionError, setSessionError] = useState("");
+  const cartEpoch = useRef(0);
   const [addresses, setAddresses] = useState([]);
   useEffect(() => {
     let active = true;
@@ -51,6 +52,8 @@ export default function App() {
       try {
         const session = await api.me();
         if (!active) return;
+        setUser(session.data);
+        setSessionReady(true);
         const [profile, addressList] = await Promise.all([
           api.profile(),
           api.addresses(),
@@ -80,8 +83,10 @@ export default function App() {
             isDefault: a.is_default,
           })),
         );
-      } catch {
-        // Guest storefront tidak membutuhkan profil atau alamat customer.
+      } catch (error) {
+        if (!active) return;
+        if (error.status === 401) setSessionReady(true);
+        else setSessionError("Sesi belum dapat diperiksa. Muat ulang halaman sebelum bertransaksi.");
       }
     };
     loadSession();
@@ -137,11 +142,11 @@ export default function App() {
     };
   }, []);
   useEffect(() => {
-    if (isProtectedStorefrontRoute(page) && !user) {
+    if (sessionReady && isProtectedStorefrontRoute(page) && !user) {
       setReturnTo(page);
       window.location.hash = "#login";
     }
-  }, [page, user]);
+  }, [page, user, sessionReady]);
   useEffect(() => {
     const productName =
       page === "product"
@@ -166,7 +171,7 @@ export default function App() {
     window.scrollTo({top: 0, behavior: "instant"});
   };
   const applyServerCart = (payload) => {
-    const token = payload.guest_token || guestCartToken;
+    const token = payload.guest_token || "";
     setCart(mapServerCart(payload));
     setCartSource("api");
     setCartError("");
@@ -174,65 +179,53 @@ export default function App() {
       setGuestCartToken(token);
       sessionStorage.setItem("gutshoes-guest-cart", token);
     }
+    if (user && !token) {
+      setGuestCartToken("");
+      sessionStorage.removeItem("gutshoes-guest-cart");
+    }
     return {token, cart: payload};
   };
   const ensureServerCart = async () => {
-    if (!guestCartToken)
-      throw new Error("Cart demo belum memiliki token server.");
-    const response = await api.cart(guestCartToken);
+    if (!sessionReady) throw new Error("Tunggu pemeriksaan sesi selesai, lalu coba lagi.");
+    const epoch = cartEpoch.current;
+    const response = await (user && guestCartToken ? api.claimCart(guestCartToken) : api.cart(guestCartToken));
+    if (epoch !== cartEpoch.current) throw new Error("Sesi berubah. Muat ulang keranjang.");
     return applyServerCart(response.data);
   };
   const reloadCart = async () => {
-    if (!guestCartToken) return;
+    if (!sessionReady) return;
     setCartLoading(true);
     setCartError("");
     try {
       await ensureServerCart();
     } catch (error) {
-      if (isBackendUnavailable(error)) {
-        setCartSource("demo");
-        setCartError(
-          "API Laravel belum tersedia. Cart dipertahankan sebagai demo lokal dan tidak dipakai untuk transaksi nyata.",
-        );
-      } else
-        setCartError(
-          error.message || "Cart server belum dapat dimuat. Coba lagi.",
-        );
+      setCartError(error.message || "Keranjang belum dapat dimuat. Coba lagi.");
     } finally {
       setCartLoading(false);
     }
   };
   useEffect(() => {
-    if (guestCartToken) reloadCart();
-  }, []);
+    if (!sessionReady) return;
+    const epoch = ++cartEpoch.current;
+    let active = true;
+    setCart([]);
+    setCartLoading(true);
+    (user && guestCartToken ? api.claimCart(guestCartToken) : api.cart(guestCartToken))
+      .then((response) => { if (active && epoch === cartEpoch.current) applyServerCart(response.data); })
+      .catch((error) => { if (active) setCartError(error.message || "Keranjang belum dapat dimuat."); })
+      .finally(() => { if (active) setCartLoading(false); });
+    return () => { active = false; };
+  }, [sessionReady, user?.id]);
   const openProduct = (p) => navigate("product", {product: p});
   const addToCart = async (product, size) => {
     const variant = product.variants.find(
       (v) => String(v.size) === String(size),
     );
-    if (!variant?.id) return "demo";
-    try {
-      const response = await api.addCartItem(variant.id, 1, guestCartToken);
-      applyServerCart(response.data);
-      return "api";
-    } catch (error) {
-      if (!isBackendUnavailable(error)) throw error;
-    }
-    setCartSource("demo");
-    setCartError(
-      "API Laravel belum tersedia. Perubahan cart hanya disimpan selama halaman ini terbuka.",
-    );
-    setCart((prev) => {
-      const ix = prev.findIndex(
-        (i) => i.product.id === product.id && i.size === size,
-      );
-      if (ix >= 0)
-        return prev.map((i, n) =>
-          n === ix ? {...i, qty: Math.min(i.qty + 1, product.stock[size])} : i,
-        );
-      return [...prev, {product, size, qty: 1}];
-    });
-    return "demo";
+    if (!sessionReady || !variant?.id) throw new Error("Produk atau sesi belum siap. Coba lagi.");
+    const epoch = cartEpoch.current;
+    const response = await api.addCartItem(variant.id, 1, guestCartToken);
+    if (epoch === cartEpoch.current) applyServerCart(response.data);
+    return "api";
   };
   const updateQty = async (item, delta) => {
     const key = cartKey(item),
@@ -241,12 +234,8 @@ export default function App() {
         Math.min(item.qty + delta, item.product.stock[item.size]),
       );
     if (quantity === item.qty) return;
-    if (cartSource !== "api" || !item.backendItemId || !guestCartToken) {
-      setCart((prev) =>
-        prev.map((i) => (cartKey(i) === key ? {...i, qty: quantity} : i)),
-      );
-      return;
-    }
+    if (!sessionReady || !item.backendItemId) return;
+    const epoch = cartEpoch.current;
     setCartActions((prev) => ({
       ...prev,
       [key]: {loading: true, type: "quantity"},
@@ -257,6 +246,7 @@ export default function App() {
         quantity,
         guestCartToken,
       );
+      if (epoch !== cartEpoch.current) return;
       applyServerCart(response.data);
       setCartActions((prev) => ({...prev, [key]: {}}));
     } catch (error) {
@@ -268,10 +258,8 @@ export default function App() {
   };
   const removeItem = async (item) => {
     const key = cartKey(item);
-    if (cartSource !== "api" || !item.backendItemId || !guestCartToken) {
-      setCart((prev) => prev.filter((i) => cartKey(i) !== key));
-      return;
-    }
+    if (!sessionReady || !item.backendItemId) return;
+    const epoch = cartEpoch.current;
     setCartActions((prev) => ({
       ...prev,
       [key]: {loading: true, type: "delete"},
@@ -281,6 +269,7 @@ export default function App() {
         item.backendItemId,
         guestCartToken,
       );
+      if (epoch !== cartEpoch.current) return;
       applyServerCart(response.data);
       setCartActions((prev) => ({...prev, [key]: {}}));
     } catch (error) {
@@ -322,11 +311,15 @@ export default function App() {
   const logout = async () => {
     try {
       await api.logout();
-    } finally {
+      cartEpoch.current++;
+      setCart([]);
+      setOrder(null);
       setUser(null);
       setAddresses([]);
       setReturnTo("profile");
       navigate("home");
+    } catch (error) {
+      setSessionError(error.message || "Keluar akun belum berhasil. Coba lagi.");
     }
   };
   const cartCount = cart.reduce((sum, i) => sum + i.qty, 0);
@@ -345,6 +338,7 @@ export default function App() {
     loadCatalog, query, setQuery, addToCart, cart, updateQty, removeItem,
     cartSource, cartLoading, cartError, cartActions, reloadCart, createOrder,
     user, setUser, addresses, setAddresses, guestCartToken, ensureServerCart,
+    onCheckoutCreated: () => { setCart([]); setCartActions({}); },
     order, guestOrders, rememberGuestOrder, login, logout, returnTo,
   });
   return (
@@ -352,6 +346,7 @@ export default function App() {
       <a className="skip-link" href="#main">
         Lewati ke konten
       </a>
+      {sessionError && <p role="alert" className="notice error">{sessionError}</p>}
       <Header
         cartCount={cartCount}
         navigate={navigate}
@@ -362,7 +357,7 @@ export default function App() {
         categories={[...new Set(products.map((product) => product.category))]}
       />
       <div id="main" className="main-focus" ref={mainRef} tabIndex="-1">
-        <Suspense key={page} fallback={<RouteLoading />}>{content}</Suspense>
+        <Suspense key={page} fallback={<RouteLoading />}>{!sessionReady && (page === "checkout" || isProtectedStorefrontRoute(page)) ? <RouteLoading /> : content}</Suspense>
       </div>
       <Footer />
     </div>

@@ -46,6 +46,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
         Route::post('/orders/{orderNumber}/cancel', [CancellationRefundController::class, 'cancel'])->middleware('throttle:checkout');
         Route::post('/admin/auth/login', [SessionController::class, 'adminLogin'])->middleware('throttle:auth');
         Route::middleware('auth:sanctum')->group(function (): void {
+            Route::post('/cart/claim', [CartController::class, 'claim']);
             Route::get('/auth/me', [SessionController::class, 'me']);
             Route::post('/auth/logout', [SessionController::class, 'logout']);
             Route::get('/profile', [ProfileController::class, 'show']);

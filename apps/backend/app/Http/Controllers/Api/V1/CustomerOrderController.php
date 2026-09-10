@@ -11,14 +11,14 @@ class CustomerOrderController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $orders = Order::where('user_id', $request->user()->id)->with(['items', 'shipment'])->latest()->paginate(min((int) $request->input('per_page', 15), 50));
+        $orders = Order::where('user_id', $request->user()->id)->with(['items', 'shipment', 'payment'])->latest()->paginate(max(1, min((int) $request->input('per_page', 15), 50)));
 
         return response()->json(['data' => $orders->items(), 'meta' => ['current_page' => $orders->currentPage(), 'last_page' => $orders->lastPage(), 'per_page' => $orders->perPage(), 'total' => $orders->total()]]);
     }
 
     public function show(Request $request, string $orderNumber): JsonResponse
     {
-        $order = Order::where('order_number', $orderNumber)->where('user_id', $request->user()->id)->with(['items', 'addresses', 'payment', 'shipment', 'statusHistories'])->firstOrFail();
+        $order = Order::where('order_number', $orderNumber)->where('user_id', $request->user()->id)->with(['items', 'addresses', 'payment', 'shipment', 'statusHistories', 'refunds:id,order_id,status,amount,currency,completed_at'])->firstOrFail();
 
         return response()->json(['data' => $order]);
     }

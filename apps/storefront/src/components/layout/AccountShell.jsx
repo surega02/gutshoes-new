@@ -14,10 +14,10 @@ function AccountShell({active, navigate, user, children, onLogout}) {
       <ConfirmDialog
         open={confirming}
         title="Keluar dari akun?"
-        description="Data akun demo tersimpan di browser perangkat ini sampai kamu keluar atau menghapus data situs. Keranjang tetap tersedia."
+        description="Kamu perlu masuk kembali untuk membuka pesanan dan keranjang akunmu."
         confirmLabel="Ya, keluar"
         onCancel={() => setConfirming(false)}
-        onConfirm={onLogout}
+        onConfirm={() => { setConfirming(false); onLogout(); }}
       />
       <header className="account-head">
         <div className="profile-avatar" aria-hidden="true">
@@ -25,7 +25,7 @@ function AccountShell({active, navigate, user, children, onLogout}) {
         </div>
         <div>
           <h1>Halo, {user.name.split(" ")[0]}</h1>
-          <p>{user.email} · Akun demo</p>
+          <p>{user.email}</p>
         </div>
       </header>
       <div className="account-layout">

@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Inventory\InventoryService;
+use App\Domain\Order\GuestOrderAccess;
 use App\Enums\UserRole;
 use App\Models\Inventory;
 use App\Models\Order;
@@ -30,6 +31,9 @@ function cancellableOrder(string $status): array
             'amount' => '120000.00', 'currency' => 'IDR', 'expires_at' => now()->addDay(), 'paid_at' => now()]);
     }
 
+    app(GuestOrderAccess::class)->issue($order);
+    test()->withHeader('X-Guest-Order-Token', $order->guest_access_token);
+
     return compact('order', 'inventory');
 }
 
@@ -38,7 +42,7 @@ it('cancels unpaid orders and releases reservation exactly once', function () {
     $headers = ['Idempotency-Key' => 'cancel-key-00000001'];
     $payload = ['email' => $order->customer_email, 'reason' => 'Changed mind'];
     $this->withHeaders($headers)->postJson("/api/v1/orders/{$order->order_number}/cancel", $payload)->assertCreated();
-    $this->withHeaders($headers)->postJson("/api/v1/orders/{$order->order_number}/cancel", $payload)->assertStatus(422);
+    $this->withHeaders($headers)->postJson("/api/v1/orders/{$order->order_number}/cancel", $payload)->assertCreated();
     expect($order->refresh()->getRawOriginal('status'))->toBe('CANCELLED')->and($inventory->refresh()->reserved)->toBe(0);
     $this->assertDatabaseCount('refunds', 0);
 });

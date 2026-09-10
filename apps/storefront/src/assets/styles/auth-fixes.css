@@ -130,3 +130,7 @@
   gap: .7rem;
   margin-top: 1.5rem;
 }
+
+/* Order snapshots have text and totals, without a live product image column. */
+.order-product-line.order-product-line--snapshot { grid-template-columns: minmax(0, 1fr) auto; }
+.order-product-line--snapshot > span { min-width: 0; overflow-wrap: anywhere; }

@@ -10,6 +10,7 @@ class InventoryMovement extends Model
 {
     protected $guarded = [];
 
+    /** @return BelongsTo<User, $this> */
     public function actor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'actor_id');
