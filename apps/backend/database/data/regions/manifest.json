@@ -1,9 +1,9 @@
 {
   "dataset": "gutshoes-region-master",
   "files": {
-    "provinces.csv": {"rows": 38, "sha256": "b4c69dca93d2bd361147b7450b3185e1e9cd696709b696d060f4f108e58a7aa6"},
-    "regencies.csv": {"rows": 514, "sha256": "ecbf69f7704f0b50bb22ccec7a2685cd65b7f1cc6274433cd369d8d26a6f09b2"},
-    "districts.csv": {"rows": 7285, "sha256": "6d182288238577aefd32f225c131b9499600ad8fc6fb5c8b59678103c543611f"},
-    "villages.csv": {"rows": 83762, "sha256": "28425c25f9f375aa11d6a0ceb78874c0865a2787ebb57c44dc2a4fd573ef613b"}
+    "provinces.csv": {"rows": 38, "sha256": "d7040ea043c5a30969aa280108461042e92358862f4ad31fd688d3ee69f26dff"},
+    "regencies.csv": {"rows": 514, "sha256": "bb7f5639a7fd01bc8ca45cf639d12b49125edd7186ad79dfb1ca8fcf13b52bbf"},
+    "districts.csv": {"rows": 7285, "sha256": "efb748b247f5fec7ee80b74697df7460a109efd52d916f903d589ac2b0d9d9d4"},
+    "villages.csv": {"rows": 83762, "sha256": "8748ba2a73dd8a389ed9b712f099d18d219bc4b4e00343f4261de7f74335b53d"}
   }
 }
