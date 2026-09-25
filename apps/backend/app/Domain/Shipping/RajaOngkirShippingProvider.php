@@ -37,6 +37,8 @@ class RajaOngkirShippingProvider implements ShippingProvider
     {
         preg_match_all('/\d+/', $etd, $matches);
 
-        return isset($matches[0]) && $matches[0] !== [] ? (int) max($matches[0]) : 0;
+        $days = $matches[0];
+
+        return $days === [] ? 0 : (int) max($days);
     }
 }
