@@ -63,6 +63,9 @@ Route::prefix('v1')->middleware('throttle:api')->group(function (): void {
                 Route::get('/cancellations', [AdminOperationsController::class, 'cancellations']);
                 Route::get('/refunds', [AdminOperationsController::class, 'refunds']);
                 Route::get('/customers', [AdminOperationsController::class, 'customers']);
+                Route::get('/customers/{customer}', [AdminOperationsController::class, 'customer']);
+                Route::get('/warehouse', [AdminOperationsController::class, 'warehouse']);
+                Route::put('/warehouse', [AdminOperationsController::class, 'updateWarehouse']);
                 Route::get('/audit-logs', [AdminOperationsController::class, 'auditLogs']);
                 Route::get('/promotions', [AdminOperationsController::class, 'promotions']);
                 Route::post('/promotions', [AdminOperationsController::class, 'savePromotion']);

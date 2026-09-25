@@ -12,6 +12,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class CartController extends Controller
 {
@@ -35,9 +36,11 @@ class CartController extends Controller
             $customer = Cart::whereKey($customer->id)->lockForUpdate()->firstOrFail();
             if ($guest) {
                 foreach ($guest->items()->lockForUpdate()->get() as $item) {
-                    $target = $customer->items()->firstOrNew(['product_variant_id' => $item->product_variant_id]);
-                    $target->quantity = ($target->quantity ?? 0) + $item->quantity;
-                    $target->save();
+                    $target = $customer->items()->where('product_variant_id', $item->product_variant_id)->lockForUpdate()->first() ?? new CartItem(['product_variant_id' => $item->product_variant_id]);
+                    $quantity = ($target->quantity ?? 0) + $item->quantity;
+                    $this->ensureAvailableStock(ProductVariant::findOrFail($item->product_variant_id), $quantity);
+                    $target->quantity = $quantity;
+                    $customer->items()->save($target);
                 }
                 $guest->update(['status' => 'ABANDONED']);
             }
@@ -50,15 +53,17 @@ class CartController extends Controller
 
     public function storeItem(Request $request): JsonResponse
     {
-        $d = $request->validate(['variant_id' => ['required', 'integer', 'exists:product_variants,id'], 'quantity' => ['required', 'integer', 'min:1', 'max:20']]);
+        $d = $request->validate(['variant_id' => ['required', 'integer', 'exists:product_variants,id'], 'quantity' => ['required', 'integer', 'min:1']]);
         $variant = ProductVariant::where('is_active', true)->findOrFail($d['variant_id']);
         $cart = $this->resolver->resolve($request);
 
         return DB::transaction(function () use ($cart, $variant, $d): JsonResponse {
             $cart = Cart::whereKey($cart->id)->where('status', 'ACTIVE')->lockForUpdate()->firstOrFail();
-            $item = $cart->items()->firstOrNew(['product_variant_id' => $variant->id]);
-            $item->quantity = min(20, ($item->quantity ?? 0) + $d['quantity']);
-            $item->save();
+            $item = $cart->items()->where('product_variant_id', $variant->id)->lockForUpdate()->first() ?? new CartItem(['product_variant_id' => $variant->id]);
+            $quantity = ($item->quantity ?? 0) + $d['quantity'];
+            $this->ensureAvailableStock($variant, $quantity);
+            $item->quantity = $quantity;
+            $cart->items()->save($item);
 
             return response()->json(['data' => $this->payload($cart->refresh())], 201);
         }, 3);
@@ -68,10 +73,13 @@ class CartController extends Controller
     {
         $cart = $this->resolver->resolve($request, false);
         abort_unless($cart && $item->cart_id === $cart->id, 404);
-        $d = $request->validate(['quantity' => ['required', 'integer', 'min:1', 'max:20']]);
+        $d = $request->validate(['quantity' => ['required', 'integer', 'min:1']]);
 
         return DB::transaction(function () use ($cart, $item, $d): JsonResponse {
             $cart = Cart::whereKey($cart->id)->where('status', 'ACTIVE')->lockForUpdate()->firstOrFail();
+            $item = CartItem::whereKey($item->id)->lockForUpdate()->firstOrFail();
+            $variant = ProductVariant::findOrFail($item->product_variant_id);
+            $this->ensureAvailableStock($variant, $d['quantity']);
             $item->update($d);
 
             return response()->json(['data' => $this->payload($cart)]);
@@ -89,6 +97,14 @@ class CartController extends Controller
 
             return response()->json(['data' => $this->payload($cart)]);
         }, 3);
+    }
+
+    private function ensureAvailableStock(ProductVariant $variant, int $quantity): void
+    {
+        $available = (int) $variant->inventories()->lockForUpdate()->get()->sum(fn ($inventory): int => max(0, (int) $inventory->on_hand - (int) $inventory->reserved));
+        if ($quantity > $available) {
+            throw ValidationException::withMessages(['quantity' => ["Jumlah melebihi stok tersedia ({$available})."]]);
+        }
     }
 
     /** @return array<string,mixed> */

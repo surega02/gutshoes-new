@@ -57,6 +57,6 @@ class PricingService
         }
 
         return ['items' => $lines, 'subtotal' => number_format($subtotal, 2, '.', ''), 'product_discount' => number_format($productDiscount, 2, '.', ''), 'voucher_discount' => number_format($voucherDiscount, 2, '.', ''),
-            'shipping_fee' => number_format($shipping, 2, '.', ''), 'grand_total' => number_format(max(0,$afterProducts + $shipping - $voucherDiscount),2,'.',''), 'currency' => 'IDR', 'voucher' => $voucher?->code];
+            'shipping_fee' => number_format($shipping, 2, '.', ''), 'grand_total' => number_format(max(0, $afterProducts + $shipping - $voucherDiscount), 2, '.', ''), 'currency' => 'IDR', 'voucher' => $voucher?->code];
     }
 }

@@ -59,6 +59,7 @@ class CatalogDemoSeeder extends Seeder
             $source = base_path('../storefront/src/assets/products/'.$item['image']);
             if (! is_file($source)) {
                 $this->command?->warn('Aset produk tidak ditemukan: '.$source);
+
                 continue;
             }
             $path = 'products/'.$product->id.'/'.$item['image'];
@@ -73,4 +74,3 @@ class CatalogDemoSeeder extends Seeder
         $this->command?->info('Enam produk contoh dan gambarnya siap di katalog.');
     }
 }
-

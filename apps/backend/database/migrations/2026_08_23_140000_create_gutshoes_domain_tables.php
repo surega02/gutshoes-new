@@ -256,7 +256,8 @@ return new class extends Migration
             $table->string('provider', 32)->default('MIDTRANS');
             $table->string('provider_transaction_id')->nullable()->unique();
             $table->string('snap_token')->nullable();
-            $table->enum('status', ['PENDING', 'SETTLEMENT', 'CAPTURE', 'DENY', 'CANCEL', 'EXPIRE', 'REFUND', 'FAILURE'])->default('PENDING')->index();
+            $table->enum('status', ['PENDING', 'SUCCESS', 'FAILED'])->default('PENDING')->index();
+            $table->string('provider_status', 32)->nullable()->index();
             $table->decimal('amount', 15, 2);
             $table->char('currency', 3)->default('IDR');
             $table->timestamp('expires_at');

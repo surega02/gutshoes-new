@@ -2,6 +2,7 @@ import React from "react";
 import Dashboard from "../admin/pages/Dashboard";
 import Products from "../admin/pages/Products";
 import Catalog from "../admin/pages/Catalog";
+import Sizes from "../admin/pages/Sizes";
 import Inventory from "../admin/pages/Inventory";
 import Orders from "../admin/pages/Orders";
 import Customers from "../admin/pages/Customers";
@@ -13,6 +14,7 @@ export const adminRoutes = [
   {section: "dashboard", path: "/admin/dashboard", render: (context) => <Dashboard navigate={context.navigate} />},
   {section: "products", path: "/admin/products", render: () => <Products />},
   {section: "catalog", path: "/admin/catalog", render: () => <Catalog />},
+  {section: "sizes", path: "/admin/sizes", render: () => <Sizes />},
   {section: "inventory", path: "/admin/inventory", render: () => <Inventory />},
   {section: "orders", path: "/admin/orders", render: () => <Orders />},
   {section: "customers", path: "/admin/customers", render: () => <Customers />},

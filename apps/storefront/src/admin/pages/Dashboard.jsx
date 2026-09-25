@@ -18,27 +18,71 @@ function Dashboard({navigate}) {
       <ResourceState {...resource} />
       {!resource.loading && !resource.error && (
         <>
-          <section className="adm-metrics">
-            <Metric
-              label="Pendapatan terbayar"
-              value={rupiah(Number(data.revenue?.paid_total || 0))}
-              delta="Akumulasi pesanan terkonfirmasi"
-            />
-            <Metric
-              label="Menunggu pembayaran"
-              value={orders.pending_payment || 0}
-              delta="Belum dibayar"
-            />
-            <Metric
-              label="Perlu diproses"
-              value={(orders.paid || 0) + (orders.processing || 0)}
-              delta="Lunas atau sedang diproses"
-            />
-            <Metric
-              label="Stok rendah"
-              value={data.low_stock_count || 0}
-              delta={"Ambang " + (data.low_stock_threshold || 0) + " unit"}
-            />
+          <section className="adm-dashboard-section" aria-labelledby="business-summary">
+            <div className="adm-section-heading">
+              <div>
+                <h2 id="business-summary">Ringkasan bisnis</h2>
+                <p>Angka utama penjualan dan ketersediaan hari ini.</p>
+              </div>
+            </div>
+            <div className="adm-metrics">
+              <Metric
+                label="Pendapatan terbayar"
+                value={rupiah(Number(data.revenue?.paid_total || 0))}
+                delta="Akumulasi pesanan terkonfirmasi"
+              />
+              <Metric
+                label="Pesanan hari ini"
+                value={orders.today || 0}
+                delta={rupiah(Number(data.revenue?.today || 0))}
+              />
+              <Metric
+                label="Menunggu pembayaran"
+                value={orders.pending_payment || 0}
+                delta="Belum dibayar"
+                attention={Number(orders.pending_payment || 0) > 0}
+              />
+              <Metric
+                label="Stok rendah"
+                value={data.low_stock_count || 0}
+                delta={"Ambang " + (data.low_stock_threshold || 0) + " unit"}
+                attention={Number(data.low_stock_count || 0) > 0}
+              />
+            </div>
+          </section>
+          <section className="adm-dashboard-section" aria-labelledby="operations-queue">
+            <div className="adm-section-heading">
+              <div>
+                <h2 id="operations-queue">Antrean operasional</h2>
+                <p>Pekerjaan yang masih menunggu tindakan tim.</p>
+              </div>
+            </div>
+            <div className="adm-metrics">
+              <Metric
+                label="Pesanan perlu diproses"
+                value={(orders.paid || 0) + (orders.processing || 0)}
+                delta="Lunas atau sedang diproses"
+                attention={Number(orders.paid || 0) + Number(orders.processing || 0) > 0}
+              />
+              <Metric
+                label="Pembayaran tertunda"
+                value={data.operations?.payments_pending || 0}
+                delta="Perlu rekonsiliasi"
+                attention={Number(data.operations?.payments_pending || 0) > 0}
+              />
+              <Metric
+                label="Pengiriman tertunda"
+                value={data.operations?.shipments_pending || 0}
+                delta="Perlu diproses"
+                attention={Number(data.operations?.shipments_pending || 0) > 0}
+              />
+              <Metric
+                label="Refund tertunda"
+                value={data.operations?.refunds_pending || 0}
+                delta="Perlu tindak lanjut"
+                attention={Number(data.operations?.refunds_pending || 0) > 0}
+              />
+            </div>
           </section>
           <section className="adm-card adm-priority">
             <div className="adm-card-head">

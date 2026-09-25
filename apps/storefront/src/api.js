@@ -59,7 +59,7 @@ async function request(path, options = {}, retried = false) {
   try {
     response = await fetch(`${API_BASE}${path}`, {
       ...options,
-      signal: options.signal || AbortSignal.timeout(20000),
+      signal: options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000),
       headers,
       credentials: "include",
       body:
@@ -101,9 +101,9 @@ export const api = {
     request("/regions/districts?regency_code=" + encodeURIComponent(code)),
   villages: (code) =>
     request("/regions/villages?district_code=" + encodeURIComponent(code)),
-  catalog: (params) =>
-    request(`/products?${new URLSearchParams(params).toString()}`),
-  product: (slug) => request(`/products/${encodeURIComponent(slug)}`),
+  catalog: (params, options) =>
+    request(`/products?${new URLSearchParams(params).toString()}`, options),
+  product: (slug, options) => request(`/products/${encodeURIComponent(slug)}`, options),
   me: () => request("/auth/me"),
   adminLogin: async (credentials) => {
     await csrf();
@@ -190,6 +190,10 @@ export const api = {
     request(`/admin/inventories/${id}`, {method: "DELETE"}),
   adminCustomers: (params) =>
     request(`/admin/customers?${new URLSearchParams(params).toString()}`),
+  adminCustomer: (id) => request(`/admin/customers/${id}`),
+  adminWarehouse: () => request("/admin/warehouse"),
+  updateAdminWarehouse: (data) =>
+    request("/admin/warehouse", {method: "PUT", body: data}),
   adminPromotions: (params) =>
     request(`/admin/promotions?${new URLSearchParams(params).toString()}`),
   adminVouchers: (params) =>
@@ -210,6 +214,12 @@ export const api = {
   deleteCategory: (id) =>
     request(`/admin/categories/${id}`, {method: "DELETE"}),
   adminSizes: () => request("/admin/sizes"),
+  createSize: (data) =>
+    request("/admin/sizes", {method: "POST", body: data}),
+  updateSize: (id, data) =>
+    request(`/admin/sizes/${id}`, {method: "PUT", body: data}),
+  deleteSize: (id) =>
+    request(`/admin/sizes/${id}`, {method: "DELETE"}),
   adminProducts: (params) =>
     request(`/admin/products?${new URLSearchParams(params).toString()}`),
   adminProduct: (id) => request(`/admin/products/${id}`),

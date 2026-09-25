@@ -5,7 +5,7 @@ import Footer from "./components/layout/Footer";
 import {cartKey, mapServerCart} from "./lib/cart";
 import {initialGuestOrders, recoveryReference, sanitizeGuestReference, validGuestReference, writeGuestOrders} from "./lib/guestOrders";
 import {isProtectedStorefrontRoute, readRoute, renderStorefrontRoute, routeHash, routeTitle} from "./routes";
-import {mapCatalogProduct} from "./lib/catalog";
+import {useCatalog} from "./lib/useCatalog";
 
 const AdminPanel = lazy(() => import("./ProtectedAdmin"));
 
@@ -37,9 +37,8 @@ export default function App() {
   const [cartLoading, setCartLoading] = useState(false);
   const [cartError, setCartError] = useState("");
   const [cartActions, setCartActions] = useState({});
-  const [products, setProducts] = useState([]);
-  const [catalogLoading, setCatalogLoading] = useState(true);
-  const [catalogError, setCatalogError] = useState("");
+  const {products, loading: catalogLoading, error: catalogFailure, retry: loadCatalog, filters: catalogFilters} = useCatalog({per_page: 4, sort: "newest"});
+  const catalogError = catalogFailure?.message || "";
   const mainRef = useRef(null);
   const [user, setUser] = useState(null);
   const [sessionReady, setSessionReady] = useState(false);
@@ -94,40 +93,6 @@ export default function App() {
       active = false;
     };
   }, []);
-  const loadCatalog = async () => {
-    setCatalogLoading(true);
-    setCatalogError("");
-    try {
-      const response = await api.catalog({per_page: 48});
-      setProducts((response.data || []).map(mapCatalogProduct));
-    } catch (error) {
-      setProducts([]);
-      setCatalogError(error.message || "Katalog produk belum dapat dimuat.");
-    } finally {
-      setCatalogLoading(false);
-    }
-  };
-  useEffect(() => {
-    let active = true;
-    setCatalogLoading(true);
-    api.catalog({per_page: 48})
-      .then((response) => {
-        if (!active) return;
-        setProducts((response.data || []).map(mapCatalogProduct));
-        setCatalogError("");
-      })
-      .catch((error) => {
-        if (!active) return;
-        setProducts([]);
-        setCatalogError(error.message || "Katalog produk belum dapat dimuat.");
-      })
-      .finally(() => {
-        if (active) setCatalogLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
   useEffect(() => {
     const sync = () => {
       setRoute(readRoute());
@@ -148,12 +113,8 @@ export default function App() {
     }
   }, [page, user, sessionReady]);
   useEffect(() => {
-    const productName =
-      page === "product"
-        ? products.find((item) => item.slug === pageData.slug)?.name
-        : "";
-    document.title = routeTitle(route, productName);
-  }, [route, page, pageData.slug, products]);
+    if (page !== "product") document.title = routeTitle(route);
+  }, [route, page]);
   useEffect(() => {
     mainRef.current?.focus({preventScroll: true});
   }, [page]);
@@ -334,7 +295,7 @@ export default function App() {
       </Suspense>
     );
   const content = renderStorefrontRoute(page, {
-    pageData, navigate, openProduct, products, catalogLoading, catalogError,
+    pageData, navigate, openProduct, products, catalogLoading, catalogError, catalogFilters,
     loadCatalog, query, setQuery, addToCart, cart, updateQty, removeItem,
     cartSource, cartLoading, cartError, cartActions, reloadCart, createOrder,
     user, setUser, addresses, setAddresses, guestCartToken, ensureServerCart,
@@ -354,7 +315,7 @@ export default function App() {
         setQuery={setQuery}
         user={user}
         page={page}
-        categories={[...new Set(products.map((product) => product.category))]}
+        categories={catalogFilters?.categories || []}
       />
       <div id="main" className="main-focus" ref={mainRef} tabIndex="-1">
         <Suspense key={page} fallback={<RouteLoading />}>{!sessionReady && (page === "checkout" || isProtectedStorefrontRoute(page)) ? <RouteLoading /> : content}</Suspense>

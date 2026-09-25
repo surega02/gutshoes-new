@@ -8,8 +8,16 @@ use App\Domain\Payment\MidtransProvider;
 use App\Domain\Refund\FakeRefundProvider;
 use App\Domain\Refund\HttpRefundProvider;
 use App\Domain\Refund\RefundProvider;
+use App\Domain\Shipping\BiteshipShippingAreaMapper;
 use App\Domain\Shipping\BiteshipShippingProvider;
+use App\Domain\Shipping\FakeShippingAreaMapper;
 use App\Domain\Shipping\FakeShippingProvider;
+use App\Domain\Shipping\NullShipmentTracker;
+use App\Domain\Shipping\RajaOngkirShipmentTracker;
+use App\Domain\Shipping\RajaOngkirShippingAreaMapper;
+use App\Domain\Shipping\RajaOngkirShippingProvider;
+use App\Domain\Shipping\ShipmentTracker;
+use App\Domain\Shipping\ShippingAreaMapper;
 use App\Domain\Shipping\ShippingProvider;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -26,9 +34,19 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(MidtransProvider::class, fn () => config('services.midtrans.driver') === 'http'
             ? new HttpMidtransProvider
             : new FakeMidtransProvider);
-        $this->app->bind(ShippingProvider::class, fn () => config('gutshoes.shipping_driver') === 'biteship'
-            ? new BiteshipShippingProvider
-            : new FakeShippingProvider);
+        $this->app->bind(ShippingProvider::class, fn () => match (config('gutshoes.shipping_driver')) {
+            'biteship' => new BiteshipShippingProvider,
+            'rajaongkir' => new RajaOngkirShippingProvider,
+            default => new FakeShippingProvider,
+        });
+        $this->app->bind(ShippingAreaMapper::class, fn () => match (config('gutshoes.shipping_driver')) {
+            'biteship' => new BiteshipShippingAreaMapper,
+            'rajaongkir' => new RajaOngkirShippingAreaMapper,
+            default => new FakeShippingAreaMapper,
+        });
+        $this->app->bind(ShipmentTracker::class, fn () => config('gutshoes.tracking_driver') === 'rajaongkir'
+            ? new RajaOngkirShipmentTracker
+            : new NullShipmentTracker);
     }
 
     public function boot(): void

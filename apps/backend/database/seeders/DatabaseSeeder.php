@@ -2,9 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Inventory;
-use App\Models\ProductVariant;
-use App\Models\Warehouse;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder

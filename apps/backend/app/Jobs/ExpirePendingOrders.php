@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Domain\Inventory\InventoryService;
 use App\Domain\Payment\ClosePendingPayment;
 use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
 use App\Models\InventoryReservation;
 use App\Models\Order;
@@ -33,7 +34,7 @@ class ExpirePendingOrders implements ShouldQueue
                     foreach (InventoryReservation::where('order_id', $order->id)->where('status', ReservationStatus::ACTIVE->value)->get() as $reservation) {
                         $inventory->release($reservation, ReservationStatus::EXPIRED);
                     }
-                    $order->payment?->update(['status' => 'EXPIRE']);
+                    $order->payment?->update(['status' => PaymentStatus::FAILED->value]);
                     $order->update(['status' => OrderStatus::EXPIRED->value]);
                     Bus::dispatch(new SendOrderEmail($order->id, 'payment_expired'));
                     $order->statusHistories()->create(['from_status' => OrderStatus::PENDING_PAYMENT->value, 'to_status' => OrderStatus::EXPIRED->value, 'note' => 'Payment window expired']);

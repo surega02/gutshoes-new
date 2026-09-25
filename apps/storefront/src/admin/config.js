@@ -1,13 +1,32 @@
-export const nav = [
-  ["dashboard", "dashboard", "Ikhtisar"],
-  ["products", "box", "Produk"],
-  ["catalog", "layers", "Katalog"],
-  ["inventory", "warehouse", "Stok & gudang"],
-  ["orders", "orders", "Pesanan"],
-  ["customers", "users", "Pelanggan"],
-  ["promotions", "tag", "Promosi"],
-  ["settings", "settings", "Pengaturan"],
-  ["audit", "audit", "Audit log"],
+export const navGroups = [
+  {
+    label: "Ruang kerja",
+    items: [["dashboard", "dashboard", "Ikhtisar"]],
+  },
+  {
+    label: "Katalog",
+    items: [
+      ["products", "box", "Produk"],
+      ["catalog", "layers", "Merek & kategori"],
+      ["sizes", "ruler", "Ukuran"],
+      ["inventory", "warehouse", "Stok & gudang"],
+    ],
+  },
+  {
+    label: "Penjualan",
+    items: [
+      ["orders", "orders", "Pesanan"],
+      ["customers", "users", "Pelanggan"],
+      ["promotions", "tag", "Promosi"],
+    ],
+  },
+  {
+    label: "Sistem",
+    items: [
+      ["settings", "settings", "Pengaturan"],
+      ["audit", "audit", "Audit log"],
+    ],
+  },
 ];
 export const titles = {
   dashboard: [
@@ -16,6 +35,10 @@ export const titles = {
   ],
   products: ["Produk", "Kelola produk, varian, harga, dan status publikasi."],
   catalog: ["Katalog", "Atur merek dan kategori yang membentuk navigasi toko."],
+  sizes: [
+    "Ukuran",
+    "Kelola pilihan ukuran yang tersedia saat membuat varian produk.",
+  ],
   inventory: [
     "Stok & gudang",
     "Pantau ketersediaan setiap varian dan pergerakan stok.",

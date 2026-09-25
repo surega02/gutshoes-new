@@ -1,10 +1,12 @@
 import React, {useState} from "react";
 import {api} from "../../api";
 import {apiErrorMessage, slugify} from "../lib/helpers";
+import useDialogFocus from "../hooks/useDialogFocus";
 import Button from "./Button";
 import Icon from "./Icon";
 
 function CatalogEditor({kind, item, categories, onClose, onSaved, onDeleted}) {
+  const dialogRef = useDialogFocus(onClose);
   const isCategory = kind === "category";
   const label = isCategory ? "kategori" : "merek";
   const [form, setForm] = useState(() => ({
@@ -81,9 +83,9 @@ function CatalogEditor({kind, item, categories, onClose, onSaved, onDeleted}) {
       className="adm-overlay"
       role="presentation"
       onMouseDown={(event) => event.target === event.currentTarget && onClose()}
-      onKeyDown={(event) => event.key === "Escape" && onClose()}
     >
       <aside
+        ref={dialogRef}
         className="adm-drawer adm-editor adm-catalog-editor"
         role="dialog"
         aria-modal="true"

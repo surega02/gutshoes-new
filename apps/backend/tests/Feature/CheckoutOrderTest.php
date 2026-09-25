@@ -71,12 +71,12 @@ it('rolls back every checkout side effect when stock is insufficient', function 
     expect(Order::count())->toBe(0);
     $this->assertDatabaseCount('inventory_reservations', 0)->assertDatabaseCount('order_items', 0);
 });
-it('recalculates regional shipping per item when creating the order', function () {
+it('recalculates shipping through the configured provider when creating the order', function () {
     ['cart' => $cart, 'payload' => $payload] = checkoutFixture();
     $payload['address'] = array_replace($payload['address'], orderRegion('Sumatera Utara', 'Medan'));
     $created = $this->withHeaders(['X-Guest-Cart-Token' => $cart->guest_token, 'Idempotency-Key' => 'checkout-key-regional-01'])
         ->postJson('/api/v1/orders', $payload)->assertCreated()
-        ->assertJsonPath('data.shipping_fee', '60000.00');
-    expect($created->json('data.shipment.provider'))->toBe('GUTSHOES_REGIONAL')
-        ->and($created->json('data.shipment.service'))->toBe('REGIONAL_PER_ITEM');
+        ->assertJsonPath('data.shipping_fee', '20000.00');
+    expect($created->json('data.shipment.provider'))->toBe('FAKE')
+        ->and($created->json('data.shipment.service'))->toBe('REG');
 });

@@ -833,3 +833,10 @@ footer a {
     width: min(132px, 100%);
   }
 }
+
+.catalog-pagination { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:16px; margin-top:32px; }
+.catalog-pagination span { font-variant-numeric:tabular-nums; }
+@media(max-width:760px) { .catalog-actions { flex-wrap:wrap; } .catalog-actions label { display:flex; flex-wrap:wrap; align-items:center; gap:8px; } .catalog-page .page-title { flex-wrap:wrap; } }
+
+.product-card__image, .product-name-button { color:inherit; text-decoration:none; }
+.product-card__image { display:block; }

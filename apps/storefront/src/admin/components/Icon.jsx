@@ -21,6 +21,12 @@ const Icon = ({name, size = 19}) => {
         <path d="m3 12 9 5 9-5M3 17l9 5 9-5" />
       </>
     ),
+    ruler: (
+      <>
+        <path d="M4 19 19 4l2 2L6 21l-2-2Z" />
+        <path d="m14 7 3 3M11 10l2 2M8 13l3 3M5 16l2 2" />
+      </>
+    ),
     warehouse: (
       <>
         <path d="M3 21V8l9-5 9 5v13M7 21v-8h10v8M7 17h10" />

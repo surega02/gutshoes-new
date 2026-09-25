@@ -2,7 +2,7 @@ import React, {useEffect, useRef, useState} from "react";
 import {api} from "./api";
 import {forgetAdminSession} from "./lib/adminSession";
 import logoGutShoes from "./assets/logo-gutshoes.webp";
-import {nav} from "./admin/config";
+import {navGroups, titles} from "./admin/config";
 import Icon from "./admin/components/Icon";
 import {getAdminRoute} from "./routes";
 
@@ -75,23 +75,28 @@ export default function AdminPanel({
           <span>ADMIN</span>
         </div>
         <nav ref={navRef} aria-label="Navigasi admin">
-          {nav.map(([id, icon, label]) => (
-            <button
-              key={id}
-              aria-label={id === "orders" && orderCount ? `${label}, ${orderCount} perlu ditangani` : label}
-              className={valid === id ? "active" : ""}
-              aria-current={valid === id ? "page" : undefined}
-              onClick={() => {
-                navigate(id);
-                setRail(false);
-              }}
-            >
-              <Icon name={icon} />
-              <span>{label}</span>
-              {id === "orders" && orderCount > 0 && (
-                <b aria-hidden="true">{orderCount > 99 ? "99+" : orderCount}</b>
-              )}
-            </button>
+          {navGroups.map((group) => (
+            <div className="adm-nav-group" key={group.label}>
+              <p>{group.label}</p>
+              {group.items.map(([id, icon, label]) => (
+                <button
+                  key={id}
+                  aria-label={id === "orders" && orderCount ? `${label}, ${orderCount} perlu ditangani` : label}
+                  className={valid === id ? "active" : ""}
+                  aria-current={valid === id ? "page" : undefined}
+                  onClick={() => {
+                    navigate(id);
+                    setRail(false);
+                  }}
+                >
+                  <Icon name={icon} />
+                  <span>{label}</span>
+                  {id === "orders" && orderCount > 0 && (
+                    <b aria-hidden="true">{orderCount > 99 ? "99+" : orderCount}</b>
+                  )}
+                </button>
+              ))}
+            </div>
           ))}
         </nav>
         <div className="adm-sidebar-bottom">
@@ -130,29 +135,34 @@ export default function AdminPanel({
       )}
       <div className="adm-workspace">
         <header className="adm-topbar">
-          <button
-            className="adm-menu"
-            onClick={() => setRail(true)}
-            aria-label="Buka menu"
-          >
-            <Icon name="menu" />
-          </button>
-          <label>
-            <Icon name="search" />
-            <input placeholder="Cari pesanan, SKU, atau pelanggan" />
-          </label>
-          <div>
+          <div className="adm-topbar-start">
             <button
-              aria-label="Buka pesanan yang perlu ditangani"
-              className="adm-notification"
+              className="adm-menu"
+              onClick={() => setRail(true)}
+              aria-label="Buka menu"
+            >
+              <Icon name="menu" />
+            </button>
+            <div className="adm-breadcrumb" aria-label="Lokasi halaman">
+              <span>Admin</span>
+              <Icon name="arrow" />
+              <strong>{titles[valid]?.[0] || "Ikhtisar"}</strong>
+            </div>
+          </div>
+          <div className="adm-topbar-actions">
+            <button
+              aria-label={
+                orderCount
+                  ? `Buka ${orderCount} pesanan yang perlu ditangani`
+                  : "Buka daftar pesanan"
+              }
+              className="adm-attention"
               onClick={() => navigate("orders")}
             >
               <Icon name="bell" />
-              <span />
+              <span>{orderCount || 0}</span>
+              <em>perlu ditangani</em>
             </button>
-            <span className="adm-live">
-              <i /> Sistem normal
-            </span>
           </div>
         </header>
         <main id="admin-main" tabIndex="-1">

@@ -7,7 +7,7 @@ import Icon from "./Icon";
 function OrdersTable({rows, onOpen}) {
   return (
     <div className="adm-table-wrap">
-      <table>
+      <table className="adm-responsive-table">
         <thead>
           <tr>
             <th>Pesanan</th>
@@ -23,21 +23,21 @@ function OrdersTable({rows, onOpen}) {
         <tbody>
           {rows.map((o) => (
             <tr key={o.id}>
-              <td>
+              <td data-label="Pesanan">
                 <strong>{o.id}</strong>
                 <small>{o.time}</small>
               </td>
-              <td>{o.customer}</td>
-              <td>
+              <td data-label="Pelanggan">{o.customer}</td>
+              <td data-label="Pembayaran">
                 <Badge tone={statusTone(o.payment)}>{o.payment}</Badge>
               </td>
-              <td>
+              <td data-label="Status">
                 <Badge tone={statusTone(o.status)}>{o.status}</Badge>
               </td>
-              <td className="num">
+              <td data-label="Total" className="num">
                 <strong>{rupiah(o.total)}</strong>
               </td>
-              <td>
+              <td data-label="Aksi">
                 <button
                   className="adm-row-action"
                   onClick={() => onOpen?.(o)}

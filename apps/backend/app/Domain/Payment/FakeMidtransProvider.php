@@ -20,6 +20,22 @@ class FakeMidtransProvider implements MidtransProvider
             'gross_amount' => (string) $order->grand_total];
     }
 
+    public function getStatus(Order $order): ?array
+    {
+        $payment = $order->payment;
+        if (! $payment?->provider_status) {
+            return null;
+        }
+
+        return [
+            'order_id' => $order->order_number,
+            'transaction_id' => $payment->provider_transaction_id ?? 'fake-'.$order->id,
+            'transaction_status' => $payment->provider_status,
+            'gross_amount' => (string) $order->grand_total,
+            'currency' => $order->currency,
+        ];
+    }
+
     public function verifyWebhook(array $payload): bool
     {
         $expected = hash('sha512', ($payload['order_id'] ?? '').($payload['status_code'] ?? '').($payload['gross_amount'] ?? '').config('services.midtrans.server_key'));

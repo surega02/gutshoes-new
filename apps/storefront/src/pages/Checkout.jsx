@@ -19,7 +19,8 @@ function Checkout({
 }) {
   const [step, setStep] = useState(1);
   const [buyer, setBuyer] = useState(null);
-  const [shippingService, setShippingService] = useState("REG");
+  const [shippingService, setShippingService] = useState("");
+  const [shippingOptions, setShippingOptions] = useState([]);
   const [serverShipping, setServerShipping] = useState(null);
   const [pricing, setPricing] = useState(null);
   const [voucher, setVoucher] = useState("");
@@ -35,25 +36,9 @@ function Checkout({
     try { orderAttempt.current = JSON.parse(sessionStorage.getItem(attemptStorageKey)); } catch { /* Ignore invalid local state. */ }
   }
   const submittingOrder = useRef(false);
-  const shippingOptions = [
-    {
-      service: "REG",
-      courier: "jne",
-      name: "Reguler",
-      eta: "2–4 hari kerja",
-      demoFee: 18000,
-    },
-    {
-      service: "YES",
-      courier: "jne",
-      name: "Express",
-      eta: "1–2 hari kerja",
-      demoFee: 32000,
-    },
-  ];
   const selectedShipping =
     shippingOptions.find((option) => option.service === shippingService) ||
-    shippingOptions[0];
+    shippingOptions[0] || {fee: 0};
   const fallbackPricing = useMemo(() => {
     const subtotal = cart.reduce(
       (sum, item) => sum + item.product.price * item.qty,
@@ -67,10 +52,10 @@ function Checkout({
       subtotal,
       product_discount: 0,
       voucher_discount: voucherDiscount,
-      shipping_fee: selectedShipping.demoFee,
-      grand_total: subtotal + selectedShipping.demoFee - voucherDiscount,
+      shipping_fee: Number(selectedShipping.fee || 0),
+      grand_total: subtotal + Number(selectedShipping.fee || 0) - voucherDiscount,
     };
-  }, [cart, selectedShipping.demoFee, appliedVoucher]);
+  }, [cart, Number(selectedShipping.fee || 0), appliedVoucher]);
   const shownPricing = pricing || (mode === "demo" ? fallbackPricing : null);
 
   const messageFor = (err, fallback) => {
@@ -89,8 +74,8 @@ function Checkout({
     regency_code: buyer?.regency_code,
     district_code: buyer?.district_code,
     village_code: buyer?.village_code,
-    courier: "jne",
-    service,
+    courier: shippingOptions.find((option) => option.service === service)?.courier || null,
+    service: service || null,
     voucher_code: code || null,
   });
   const validateQuote = async (
@@ -114,6 +99,7 @@ function Checkout({
         grand_total: Number(response.data.pricing.grand_total),
       });
       setServerShipping(response.data.shipping);
+      setShippingOptions(response.data.shipping_options || [response.data.shipping]);
       setShippingService(response.data.shipping.service);
       setMode("api");
       setAppliedVoucher(code);
@@ -189,9 +175,8 @@ function Checkout({
           regency_code: nextBuyer.regency_code,
           district_code: nextBuyer.district_code,
           village_code: nextBuyer.village_code,
-          courier: "jne",
-          service:
-            shippingService === "REGIONAL_PER_ITEM" ? "REG" : shippingService,
+          courier: null,
+          service: null,
           voucher_code: null,
         },
         serverCart.token,
@@ -203,6 +188,7 @@ function Checkout({
         grand_total: Number(response.data.pricing.grand_total),
       });
       setServerShipping(response.data.shipping);
+      setShippingOptions(response.data.shipping_options || [response.data.shipping]);
       setShippingService(response.data.shipping.service);
       setMode("api");
       setStep(2);
@@ -534,17 +520,14 @@ function Checkout({
                       />
                       <Icon name="truck" />
                       <span>
-                        <strong>{option.name}</strong>
+                        <strong>{option.description || option.service}</strong>
                         <small>
-                          {option.eta} · {option.courier.toUpperCase()}{" "}
-                          {option.service}
+                          {option.estimated_days ? option.estimated_days + " hari" : "Estimasi mengikuti kurir"} {" / "} {option.courier.toUpperCase()} {option.service}
                         </small>
                       </span>
                       <b>
                         {rupiah(
-                          shippingService === option.service && shownPricing
-                            ? Number(shownPricing.shipping_fee)
-                            : option.demoFee,
+                          Number(option.fee || 0),
                         )}
                       </b>
                     </label>

@@ -2,11 +2,13 @@ import React, {useEffect, useState} from "react";
 import {api} from "../../api";
 import {rupiah} from "../../data";
 import {apiErrorMessage, statusTone} from "../lib/helpers";
+import useDialogFocus from "../hooks/useDialogFocus";
 import Badge from "./Badge";
 import Button from "./Button";
 import Icon from "./Icon";
 
 function OrderDrawer({order, onClose, onUpdated}) {
+  const dialogRef = useDialogFocus(onClose);
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [action, setAction] = useState("");
@@ -100,9 +102,9 @@ function OrderDrawer({order, onClose, onUpdated}) {
       className="adm-overlay"
       role="presentation"
       onMouseDown={(event) => event.target === event.currentTarget && onClose()}
-      onKeyDown={(event) => event.key === "Escape" && onClose()}
     >
       <aside
+        ref={dialogRef}
         className="adm-drawer adm-order-drawer"
         role="dialog"
         aria-modal="true"

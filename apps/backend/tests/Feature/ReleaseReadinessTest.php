@@ -36,6 +36,11 @@ it('persists an uncertain payment intent when provider times out', function () {
             throw new RuntimeException('Provider timeout');
         }
 
+        public function getStatus(Order $order): ?array
+        {
+            throw new RuntimeException('Provider timeout');
+        }
+
         public function verifyWebhook(array $payload): bool
         {
             return true;

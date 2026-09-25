@@ -16,6 +16,7 @@ function Header({cartCount, navigate, query, setQuery, user, page, categories}) 
         <label className="search">
           <Icon name="search" />
           <input
+            maxLength={100}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && navigate("catalog")}
@@ -84,13 +85,13 @@ function Header({cartCount, navigate, query, setQuery, user, page, categories}) 
         </button>
         {categories.slice(0, 4).map((c) => (
           <button
-            key={c}
+            key={c.slug}
             onClick={() => {
-              setQuery(c);
-              navigate("catalog");
+              setQuery("");
+              navigate("catalog", {filter: c.slug});
             }}
           >
-            {c}
+            {c.name}
           </button>
         ))}
       </nav>

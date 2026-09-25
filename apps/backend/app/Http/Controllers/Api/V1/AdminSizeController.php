@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\ProductVariant;
 use App\Models\Size;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -11,7 +12,7 @@ class AdminSizeController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(['data' => Size::orderBy('system')->orderBy('value')->get()]);
+        return response()->json(['data' => Size::withCount(['variants as product_variants_count'])->orderBy('system')->orderBy('value')->get()]);
     }
 
     public function store(Request $r): JsonResponse
@@ -28,6 +29,13 @@ class AdminSizeController extends Controller
 
     public function destroy(Size $size): JsonResponse
     {
+        if (ProductVariant::withTrashed()->where('size_id', $size->id)->exists()) {
+            return response()->json([
+                'message' => 'Ukuran masih digunakan oleh varian produk.',
+                'errors' => ['size' => ['Nonaktifkan atau hapus semua varian yang menggunakan ukuran ini terlebih dahulu.']],
+            ], 422);
+        }
+
         $size->delete();
 
         return response()->json(['data' => ['deleted' => true]]);

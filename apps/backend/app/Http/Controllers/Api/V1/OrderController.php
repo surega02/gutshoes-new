@@ -22,7 +22,7 @@ class OrderController extends Controller
             'address.province_code' => ['required', 'exists:region_provinces,code'], 'address.regency_code' => ['required', 'exists:region_regencies,code'], 'address.district_code' => ['required', 'exists:region_districts,code'], 'address.village_code' => ['required', 'exists:region_villages,code'],
             'address.province' => ['nullable', 'string', 'max:255'], 'address.city' => ['nullable', 'string', 'max:255'],
             'address.district' => ['nullable', 'string', 'max:255'], 'address.postal_code' => ['required', 'string', 'max:10'],
-            'address.provider_area_id' => ['required', 'string', 'max:255'], 'shipping' => ['required', 'array'],
+            'shipping' => ['required', 'array'],
             'shipping.courier' => ['nullable', 'string', 'max:64'], 'shipping.service' => ['required', 'string', 'max:64'],
             'voucher_code' => ['nullable', 'string', 'max:64'],
         ]);

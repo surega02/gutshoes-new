@@ -7,17 +7,17 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Inventory;
 use App\Models\InventoryMovement;
-use App\Models\ProductVariant;
-use App\Models\Warehouse;
 use App\Models\Order;
 use App\Models\OrderCancellation;
 use App\Models\Payment;
+use App\Models\ProductVariant;
 use App\Models\Promotion;
 use App\Models\Refund;
 use App\Models\Shipment;
 use App\Models\StoreConfiguration;
 use App\Models\User;
 use App\Models\Voucher;
+use App\Models\Warehouse;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,8 +30,24 @@ class AdminOperationsController extends Controller
         $lowStock = (int) (StoreConfiguration::where('key', 'low_stock_threshold')->value('value') ?? 5);
 
         return response()->json(['data' => [
-            'orders' => ['pending_payment' => Order::where('status', 'PENDING_PAYMENT')->count(), 'paid' => Order::where('status', 'PAID')->count(), 'processing' => Order::where('status', 'PROCESSING')->count()],
-            'revenue' => ['paid_total' => number_format((float) Order::whereIn('status', ['PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED'])->sum('grand_total'), 2, '.', ''), 'currency' => 'IDR'],
+            'orders' => [
+                'pending_payment' => Order::where('status', 'PENDING_PAYMENT')->count(),
+                'paid' => Order::where('status', 'PAID')->count(),
+                'processing' => Order::where('status', 'PROCESSING')->count(),
+                'shipped' => Order::where('status', 'SHIPPED')->count(),
+                'delivered' => Order::where('status', 'DELIVERED')->count(),
+                'today' => Order::whereDate('created_at', today())->count(),
+            ],
+            'revenue' => [
+                'paid_total' => number_format((float) Order::whereIn('status', ['PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED'])->sum('grand_total'), 2, '.', ''),
+                'today' => number_format((float) Order::whereDate('created_at', today())->whereIn('status', ['PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED'])->sum('grand_total'), 2, '.', ''),
+                'currency' => 'IDR',
+            ],
+            'operations' => [
+                'payments_pending' => Payment::where('status', 'PENDING')->count(),
+                'shipments_pending' => Shipment::whereIn('status', ['PENDING', 'READY_TO_SHIP'])->count(),
+                'refunds_pending' => Refund::whereIn('status', ['REQUESTED', 'PENDING', 'PROCESSING'])->count(),
+            ],
             'low_stock_count' => Inventory::whereRaw('(on_hand - reserved) <= ?', [$lowStock])->count(), 'low_stock_threshold' => $lowStock,
         ]]);
     }
@@ -69,6 +85,40 @@ class AdminOperationsController extends Controller
     public function customers(Request $request): JsonResponse
     {
         return $this->listing(User::query()->where('role', 'CUSTOMER'), $request, ['email'], 'created_at');
+    }
+
+    public function customer(User $customer): JsonResponse
+    {
+        abort_unless($customer->role->value === 'CUSTOMER', 404);
+        $paidStatuses = ['PAID', 'PROCESSING', 'SHIPPED', 'DELIVERED'];
+
+        return response()->json(['data' => [
+            'customer' => $customer->load(['customerProfile', 'addresses']),
+            'summary' => [
+                'order_count' => $customer->orders()->count(),
+                'paid_total' => number_format((float) $customer->orders()->whereIn('status', $paidStatuses)->sum('grand_total'), 2, '.', ''),
+            ],
+            'orders' => $customer->orders()->with(['payment', 'shipment'])->latest()->limit(20)->get(),
+        ]]);
+    }
+
+    public function warehouse(): JsonResponse
+    {
+        return response()->json(['data' => Warehouse::query()->where('is_active', true)->first()]);
+    }
+
+    public function updateWarehouse(Request $request): JsonResponse
+    {
+        $warehouse = Warehouse::query()->where('is_active', true)->firstOrFail();
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'], 'phone' => ['nullable', 'string', 'max:32'],
+            'address_line' => ['required', 'string', 'max:500'], 'province' => ['required', 'string', 'max:255'],
+            'city' => ['required', 'string', 'max:255'], 'district' => ['required', 'string', 'max:255'],
+            'postal_code' => ['required', 'string', 'max:10'], 'provider_area_id' => ['required', 'string', 'max:255'],
+        ]);
+        $warehouse->update($data);
+
+        return response()->json(['data' => $warehouse->refresh()]);
     }
 
     public function auditLogs(Request $request): JsonResponse

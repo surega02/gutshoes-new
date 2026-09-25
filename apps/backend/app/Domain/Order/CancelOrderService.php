@@ -5,6 +5,7 @@ namespace App\Domain\Order;
 use App\Domain\Inventory\InventoryService;
 use App\Domain\Payment\ClosePendingPayment;
 use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
 use App\Jobs\SendOrderEmail;
 use App\Models\InventoryReservation;
@@ -46,7 +47,7 @@ class CancelOrderService
                 foreach (InventoryReservation::where('order_id', $order->id)->where('status', ReservationStatus::ACTIVE->value)->get() as $reservation) {
                     $this->inventory->release($reservation);
                 }
-                $order->payment?->update(['status' => 'CANCEL']);
+                $order->payment?->update(['status' => PaymentStatus::FAILED->value]);
             } else {
                 $payment = $order->payment;
                 if (! $payment) {

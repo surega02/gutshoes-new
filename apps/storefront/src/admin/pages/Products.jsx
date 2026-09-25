@@ -69,7 +69,7 @@ function ProductsPage() {
         <section className="adm-card adm-table-card">
           {rows.length ? (
             <div className="adm-table-wrap">
-              <table>
+              <table className="adm-responsive-table">
                 <thead>
                   <tr>
                     <th>Produk</th>
@@ -85,13 +85,13 @@ function ProductsPage() {
                 <tbody>
                   {rows.map((item) => (
                     <tr key={item.id}>
-                      <td>
+                      <td data-label="Produk">
                         <strong>{item.name}</strong>
                         <small>
                           {item.brand?.name || "Tanpa merek"} · {item.slug}
                         </small>
                       </td>
-                      <td>
+                      <td data-label="Status">
                         <Badge
                           tone={
                             item.status === "PUBLISHED"
@@ -104,17 +104,17 @@ function ProductsPage() {
                           {item.status}
                         </Badge>
                       </td>
-                      <td>
+                      <td data-label="Varian">
                         {item.variants?.filter((variant) => variant.is_active)
                           .length || 0}{" "}
                         aktif
                       </td>
-                      <td>
+                      <td data-label="Kategori">
                         {item.categories
                           ?.map((category) => category.name)
                           .join(", ") || "—"}
                       </td>
-                      <td className="num">
+                      <td data-label="Harga mulai" className="num">
                         <strong>
                           {item.variants?.length
                             ? rupiah(
@@ -127,7 +127,7 @@ function ProductsPage() {
                             : "—"}
                         </strong>
                       </td>
-                      <td>
+                      <td data-label="Aksi">
                         <button
                           className="adm-row-action"
                           onClick={() => setEditing(item)}

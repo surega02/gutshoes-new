@@ -15,6 +15,12 @@ return [
         'api_key' => env('BITESHIP_API_KEY'),
     ],
 
+    'rajaongkir' => [
+        'url' => env('RAJAONGKIR_URL', 'https://rajaongkir.komerce.id/api/v1'),
+        'api_key' => env('RAJAONGKIR_API_KEY'),
+        'couriers' => env('RAJAONGKIR_COURIERS', 'jne:sicepat:jnt:ninja:tiki:anteraja:pos'),
+    ],
+
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),

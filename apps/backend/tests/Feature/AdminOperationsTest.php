@@ -5,9 +5,9 @@ use App\Models\AuditLog;
 use App\Models\Inventory;
 use App\Models\Order;
 use App\Models\ProductVariant;
-use App\Models\Warehouse;
 use App\Models\StoreConfiguration;
 use App\Models\User;
+use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -75,4 +75,22 @@ it('creates reads adjusts and safely deletes inventory records', function () {
         'reason' => 'Pendaftaran lokasi stok',
     ])->assertCreated();
     $this->actingAs($admin)->deleteJson('/api/v1/admin/inventories/'.$empty->json('data.id'))->assertOk();
+});
+
+it('returns customer operational detail and updates the shipping origin', function () {
+    $admin = User::factory()->create(['role' => UserRole::ADMIN]);
+    $customer = User::factory()->create(['role' => UserRole::CUSTOMER]);
+    $warehouse = Warehouse::factory()->create(['is_active' => true]);
+
+    $this->actingAs($admin)->getJson("/api/v1/admin/customers/{$customer->id}")
+        ->assertOk()->assertJsonPath('data.customer.id', $customer->id)
+        ->assertJsonPath('data.summary.order_count', 0);
+
+    $this->actingAs($admin)->putJson('/api/v1/admin/warehouse', [
+        'name' => 'Gudang Utama', 'phone' => '08123456789', 'address_line' => 'Jl. Contoh 1',
+        'province' => 'DKI Jakarta', 'city' => 'Jakarta Selatan', 'district' => 'Kebayoran Baru',
+        'postal_code' => '12110', 'provider_area_id' => 'IDNP6IDNC148IDND836IDZ12110',
+    ])->assertOk()->assertJsonPath('data.name', 'Gudang Utama');
+
+    expect($warehouse->refresh()->provider_area_id)->toBe('IDNP6IDNC148IDND836IDZ12110');
 });

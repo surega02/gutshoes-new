@@ -62,7 +62,7 @@ class AddressController extends Controller
     private function validated(Request $request, ?RegionAddressResolver $regions = null): array
     {
         $data = $request->validate(['label' => ['required', 'string', 'max:64'], 'recipient_name' => ['required', 'string', 'max:255'], 'phone' => ['required', 'string', 'max:32'],
-            'address_line' => ['required', 'string', 'max:500'], 'postal_code' => ['required', 'string', 'max:10'], 'province_code' => ['required', 'exists:region_provinces,code'], 'regency_code' => ['required', 'exists:region_regencies,code'], 'district_code' => ['required', 'exists:region_districts,code'], 'village_code' => ['required', 'exists:region_villages,code'], 'provider_area_id' => ['nullable', 'string', 'max:255'], 'is_default' => ['sometimes', 'boolean']]);
+            'address_line' => ['required', 'string', 'max:500'], 'postal_code' => ['required', 'string', 'max:10'], 'province_code' => ['required', 'exists:region_provinces,code'], 'regency_code' => ['required', 'exists:region_regencies,code'], 'district_code' => ['required', 'exists:region_districts,code'], 'village_code' => ['required', 'exists:region_villages,code'], 'is_default' => ['sometimes', 'boolean']]);
 
         return ($regions ?? app(RegionAddressResolver::class))->resolve($data);
     }

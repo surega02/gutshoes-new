@@ -14,7 +14,7 @@ class BiteshipShippingProvider implements ShippingProvider
      */
     public function quote(array $origin, array $destination, int $weightGrams, int $quantity, ?string $courier = null): array
     {
-        $response = Http::baseUrl((string) config('services.biteship.url'))->withToken((string) config('services.biteship.api_key'))->timeout(10)->retry(2, 200)->post('/v1/rates/couriers', ['origin_area_id' => $origin['provider_area_id'], 'destination_area_id' => $destination['provider_area_id'], 'couriers' => $courier ?: 'jne,sicepat,jnt', 'items' => [['name' => 'Shoes', 'value' => 0, 'weight' => $weightGrams, 'quantity' => $quantity]]]);
+        $response = Http::baseUrl((string) config('services.biteship.url'))->withHeaders(['Authorization' => (string) config('services.biteship.api_key')])->timeout(10)->retry(2, 200)->post('/v1/rates/couriers', ['origin_area_id' => $origin['provider_area_id'], 'destination_area_id' => $destination['provider_area_id'], 'couriers' => $courier ?: 'jne,sicepat,jnt', 'items' => [['name' => 'Shoes', 'value' => 0, 'weight' => max(1, (int) ceil($weightGrams / max(1, $quantity))), 'quantity' => $quantity]]]);
         if ($response->failed()) {
             throw new RuntimeException('Shipping provider unavailable.');
         }

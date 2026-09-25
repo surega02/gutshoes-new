@@ -1,6 +1,7 @@
 import React, {useEffect, useRef, useState} from "react";
 import {api} from "../../api";
 import {apiErrorMessage, productDraft, slugify} from "../lib/helpers";
+import useDialogFocus from "../hooks/useDialogFocus";
 import {catalogImageUrl} from "../../lib/catalog";
 import Badge from "./Badge";
 import Button from "./Button";
@@ -27,6 +28,7 @@ function ProductEditor({
   const [imagePreview, setImagePreview] = useState("");
   const imageInputRef = useRef(null);
   const drawerRef = useRef(null);
+  useDialogFocus(onClose, drawerRef);
   useEffect(() => {
     if (!imageFile) {
       setImagePreview("");
@@ -427,10 +429,21 @@ function ProductEditor({
                 <h3>Varian produk</h3>
                 <p>Setiap ukuran harus memiliki SKU, harga, dan berat.</p>
               </div>
-              <Button kind="secondary" type="button" onClick={addVariant}>
+              <Button
+                kind="secondary"
+                type="button"
+                onClick={addVariant}
+                disabled={!sizes.length}
+              >
                 <Icon name="plus" /> Tambah varian
               </Button>
             </div>
+            {!sizes.length && (
+              <div className="adm-feedback error" role="alert">
+                Master ukuran masih kosong. Tambahkan ukuran melalui menu Ukuran
+                sebelum menyimpan varian produk.
+              </div>
+            )}
             {form.variants.map((variant, index) => (
               <div className="adm-variant-row" key={variant.id || index}>
                 <label>
@@ -444,7 +457,15 @@ function ProductEditor({
                   >
                     <option value="">Pilih ukuran</option>
                     {sizes.map((size) => (
-                      <option key={size.id} value={size.id}>
+                      <option
+                        key={size.id}
+                        value={size.id}
+                        disabled={form.variants.some(
+                          (item, itemIndex) =>
+                            itemIndex !== index &&
+                            String(item.size_id) === String(size.id),
+                        )}
+                      >
                         {size.label || size.value} ({size.system})
                       </option>
                     ))}

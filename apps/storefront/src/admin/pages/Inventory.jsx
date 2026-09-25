@@ -145,18 +145,18 @@ function InventoryPage() {
         <section className="adm-card adm-table-card">
           {rows.length ? (
             <div className="adm-table-wrap">
-              <table>
+              <table className="adm-inventory-table">
                 <thead><tr><th>Varian</th><th>SKU</th><th>Gudang</th><th className="num">Fisik</th><th className="num">Tersedia</th><th className="num">Dicadangkan</th><th className="num">Terjual</th><th>Status</th><th><span className="sr-only">Aksi</span></th></tr></thead>
                 <tbody>
                   {rows.map((item) => (
                     <tr key={item.id}>
                       <td><strong>{item.product}</strong><small>Ukuran {item.size}</small></td>
-                      <td><code>{item.sku}</code></td>
-                      <td>{item.warehouseName}</td>
-                      <td className="num"><strong>{item.on_hand}</strong></td>
-                      <td className="num"><strong>{item.available}</strong></td>
-                      <td className="num">{item.reserved}</td>
-                      <td className="num">{item.sold}</td>
+                      <td data-label="SKU"><code>{item.sku}</code></td>
+                      <td data-label="Gudang">{item.warehouseName}</td>
+                      <td className="num" data-label="Fisik"><strong>{item.on_hand}</strong></td>
+                      <td className="num" data-label="Tersedia"><strong>{item.available}</strong></td>
+                      <td className="num" data-label="Dicadangkan">{item.reserved}</td>
+                      <td className="num" data-label="Terjual">{item.sold}</td>
                       <td><Badge tone={item.available === 0 ? "danger" : item.available <= 5 ? "warning" : "success"}>{item.available === 0 ? "Habis" : item.available <= 5 ? "Stok rendah" : "Tersedia"}</Badge></td>
                       <td><button className="adm-row-action" onClick={() => openEdit(item)} aria-label={`Kelola stok ${item.sku}`}><Icon name="arrow" /></button></td>
                     </tr>

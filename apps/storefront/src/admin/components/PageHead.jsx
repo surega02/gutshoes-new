@@ -8,7 +8,6 @@ function PageHead({section, action, onAction}) {
   return (
     <div className="adm-page-head">
       <div>
-        <p className="adm-eyebrow">ADMIN / {title.toUpperCase()}</p>
         <h1>{title}</h1>
         <p>{description}</p>
       </div>

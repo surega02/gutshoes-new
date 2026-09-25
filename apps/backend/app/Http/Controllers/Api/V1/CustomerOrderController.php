@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Domain\Shipping\ShipmentTracker;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Throwable;
 
 class CustomerOrderController extends Controller
 {
@@ -23,11 +25,28 @@ class CustomerOrderController extends Controller
         return response()->json(['data' => $order]);
     }
 
-    public function track(Request $request): JsonResponse
+    public function track(Request $request, ShipmentTracker $tracker): JsonResponse
     {
         $data = $request->validate(['order_number' => ['required', 'string'], 'email' => ['required', 'email']]);
         $order = Order::where('order_number', $data['order_number'])->where('customer_email', $data['email'])->with(['shipment', 'statusHistories'])->firstOrFail();
 
-        return response()->json(['data' => ['order_number' => $order->order_number, 'status' => $order->status, 'shipment' => $order->shipment, 'timeline' => $order->statusHistories]]);
+        $providerTracking = null;
+        $trackingUnavailable = false;
+        if ($order->shipment?->tracking_number) {
+            try {
+                $providerTracking = $tracker->track($order->shipment->tracking_number, $order->shipment->courier);
+            } catch (Throwable) {
+                $trackingUnavailable = true;
+            }
+        }
+
+        return response()->json(['data' => [
+            'order_number' => $order->order_number,
+            'status' => $order->status,
+            'shipment' => $order->shipment,
+            'provider_tracking' => $providerTracking,
+            'tracking_unavailable' => $trackingUnavailable,
+            'timeline' => $order->statusHistories,
+        ]]);
     }
 }

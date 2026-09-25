@@ -35,7 +35,7 @@ function PromotionsPage() {
         <section className="adm-card adm-table-card">
           {rows.length ? (
             <div className="adm-table-wrap">
-              <table>
+              <table className="adm-responsive-table">
                 <thead>
                   <tr>
                     <th>Nama / kode</th>
@@ -48,20 +48,20 @@ function PromotionsPage() {
                 <tbody>
                   {rows.map((item) => (
                     <tr key={[item.kind, item.id].join("-")}>
-                      <td>
+                      <td data-label="Nama / kode">
                         <strong>{item.code || item.name}</strong>
                         <small>{item.kind}</small>
                       </td>
-                      <td>{item.type}</td>
-                      <td className="num">
+                      <td data-label="Jenis">{item.type}</td>
+                      <td data-label="Nilai" className="num">
                         {item.type === "PERCENTAGE"
                           ? item.value + "%"
                           : rupiah(Number(item.value || 0))}
                       </td>
-                      <td>
+                      <td data-label="Berakhir">
                         {new Date(item.ends_at).toLocaleDateString("id-ID")}
                       </td>
-                      <td>
+                      <td data-label="Status">
                         <Badge tone={item.is_active ? "success" : "warning"}>
                           {item.is_active ? "Aktif" : "Nonaktif"}
                         </Badge>

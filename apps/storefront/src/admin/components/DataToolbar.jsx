@@ -7,6 +7,9 @@ function DataToolbar({
   filter,
   setFilter,
   options = ["Semua status", "Aktif", "Draf"],
+  placeholder = "Cari data…",
+  searchLabel = "Cari data",
+  filterLabel = "Filter status",
 }) {
   return (
     <div className="adm-toolbar">
@@ -15,14 +18,14 @@ function DataToolbar({
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Cari data…"
-          aria-label="Cari data"
+          placeholder={placeholder}
+          aria-label={searchLabel}
         />
       </label>
       <select
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
-        aria-label="Filter status"
+        aria-label={filterLabel}
       >
         {options.map((x) => (
           <option key={x}>{x}</option>

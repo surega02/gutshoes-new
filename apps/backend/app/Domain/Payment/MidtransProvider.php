@@ -12,6 +12,9 @@ interface MidtransProvider
     /** @return array<string,mixed> Confirmed provider state; throw if it is uncertain. */
     public function closeTransaction(Order $order, string $action): array;
 
+    /** @return array<string,mixed>|null Null means Midtrans has no transaction for this order ID. */
+    public function getStatus(Order $order): ?array;
+
     /** @param array<string,mixed> $payload */
     public function verifyWebhook(array $payload): bool;
 }

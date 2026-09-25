@@ -3,6 +3,7 @@
 namespace App\Domain\Payment;
 
 use App\Domain\Inventory\InventoryService;
+use App\Enums\PaymentStatus;
 use App\Enums\ReservationStatus;
 use App\Jobs\SendOrderEmail;
 use App\Models\InventoryReservation;
@@ -23,9 +24,15 @@ class ConfirmPayment
     {
         $this->validate($order, $payment, $payload);
         if ($payment->paid_at !== null) {
+            $payment->update([
+                'provider_status' => (string) $payload['transaction_status'],
+                'provider_transaction_id' => $payload['transaction_id'],
+            ]);
+
             return;
         }
-        $payment->update(['status' => strtoupper($payload['transaction_status']),
+        $payment->update(['status' => PaymentStatus::SUCCESS->value,
+            'provider_status' => (string) $payload['transaction_status'],
             'provider_transaction_id' => $payload['transaction_id'], 'paid_at' => now()]);
         $reservations = InventoryReservation::where('order_id', $order->id)->lockForUpdate()->get();
         $active = $reservations->where('status', ReservationStatus::ACTIVE->value);

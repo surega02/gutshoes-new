@@ -13,8 +13,8 @@ function Footer() {
       <div>
         <strong>Belanja</strong>
         <a href="#catalog">Semua sepatu</a>
-        <a href="#catalog?filter=Lari">Lari</a>
-        <a href="#catalog?filter=Training">Training</a>
+        <a href="#catalog?filter=lari">Lari</a>
+        <a href="#catalog?filter=training">Training</a>
       </div>
       <div>
         <strong>Bantuan</strong>

@@ -29,7 +29,7 @@ function AuditPage() {
         <section className="adm-card adm-table-card">
           {rows.length ? (
             <div className="adm-table-wrap">
-              <table>
+              <table className="adm-responsive-table">
                 <thead>
                   <tr>
                     <th>Waktu</th>
@@ -42,19 +42,19 @@ function AuditPage() {
                 <tbody>
                   {rows.map((item) => (
                     <tr key={item.id}>
-                      <td>
+                      <td data-label="Waktu">
                         {new Date(item.created_at).toLocaleString("id-ID")}
                       </td>
-                      <td>{item.admin_id || "Sistem"}</td>
-                      <td>
+                      <td data-label="Admin">{item.admin_id || "Sistem"}</td>
+                      <td data-label="Tindakan">
                         <strong>{item.action}</strong>
                       </td>
-                      <td>
+                      <td data-label="Objek">
                         {item.entity_type
                           ? item.entity_type + " #" + (item.entity_id || "—")
                           : "—"}
                       </td>
-                      <td>
+                      <td data-label="IP">
                         <code>{item.ip_address || "—"}</code>
                       </td>
                     </tr>

@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\DB;
 
 class RegionAddressResolver
 {
+    public function __construct(private readonly ShippingAreaMapper $areaMapper) {}
+
     /**
      * @param  array<string,mixed>  $data
      * @return array<string,mixed>
@@ -21,6 +23,10 @@ class RegionAddressResolver
             throw new DomainException('Kombinasi wilayah alamat tidak valid. Pilih ulang wilayah secara berurutan.');
         }
 
-        return array_replace($data, ['province' => $p->name, 'city' => $r->name, 'district' => $d->name, 'village' => $v->name, 'postal_code' => $v->postal_code ?: ($data['postal_code'] ?? ''), 'provider_area_id' => $data['provider_area_id'] ?? $v->code]);
+        $resolved = array_replace($data, ['province' => $p->name, 'city' => $r->name, 'district' => $d->name, 'village' => $v->name, 'postal_code' => $v->postal_code ?: ($data['postal_code'] ?? '')]);
+        unset($resolved['provider_area_id'], $resolved['destination_area_id']);
+        $resolved['provider_area_id'] = $this->areaMapper->map($resolved, (string) $v->code);
+
+        return $resolved;
     }
 }

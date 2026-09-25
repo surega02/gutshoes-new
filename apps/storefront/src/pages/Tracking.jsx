@@ -258,6 +258,24 @@ function Tracking({order, navigate, user, onRemember, onOpenPayment}) {
               </div>
             )}
           </div>
+          {result.tracking_unavailable && (
+            <p className="notice error" role="status">
+              Status terbaru dari kurir sedang tidak tersedia. Status order GutShoes tetap dapat dilihat di atas.
+            </p>
+          )}
+          {result.provider_tracking?.history?.length > 0 && (
+            <div className="timeline" aria-label="Riwayat perjalanan kurir">
+              {result.provider_tracking.history.map((event, index) => (
+                <div className="done" key={(event.manifest_date || "event") + "-" + (event.manifest_time || index)}>
+                  <span><Icon name="truck" /></span>
+                  <p>
+                    <strong>{event.manifest_description || result.provider_tracking.status}</strong>
+                    <small>{[event.manifest_date, event.manifest_time, event.city_name].filter(Boolean).join(" - ")}</small>
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
           <p className="demo-note">
             Status pembayaran, pengiriman, dan kelayakan membayar berasal
             langsung dari backend GutShoes.

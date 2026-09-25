@@ -1,14 +1,17 @@
 <?php
 
 use App\Domain\Promotion\PricingService;
+use App\Domain\Shipping\RegionAddressResolver;
 use App\Models\Cart;
 use App\Models\CartItem;
+use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Promotion;
 use App\Models\Voucher;
 use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 
 uses(RefreshDatabase::class);
 function cartRegion(string $province, string $city): array
@@ -29,6 +32,7 @@ function cartRegion(string $province, string $city): array
 
 it('creates an opaque guest cart token and reuses it', function () {
     $variant = ProductVariant::factory()->create(['price' => '100000.00']);
+    Inventory::factory()->create(['product_variant_id' => $variant->id, 'on_hand' => 5, 'reserved' => 1]);
     $created = $this->postJson('/api/v1/cart/items', ['variant_id' => $variant->id, 'quantity' => 2])->assertCreated();
     $token = $created->json('data.guest_token');
     expect($token)->toBeString()->not->toBeEmpty();
@@ -58,16 +62,41 @@ it('calculates shipping and free shipping voucher from server data', function ()
     $this->withHeader('X-Guest-Cart-Token', $cart->guest_token)->postJson('/api/v1/checkout/quote', ['destination_area_id' => 'destination', 'courier' => 'jne', 'service' => 'REG', 'voucher_code' => 'FREESHIP'] + cartRegion('DKI Jakarta', 'Jakarta Selatan'))
         ->assertOk()->assertJsonPath('data.pricing.shipping_fee', '20000.00')->assertJsonPath('data.pricing.voucher_discount', '20000.00')->assertJsonPath('data.pricing.grand_total', '150000.00');
 });
-it('charges regional shipping per cart item without using the provider', function (string $province, string $city, string $expected) {
+it('uses the configured provider for destinations outside Jabodetabek', function () {
     Warehouse::factory()->create(['provider_area_id' => 'origin']);
     $variant = ProductVariant::factory()->create(['price' => '150000.00', 'weight_grams' => 900]);
     $cart = Cart::create(['guest_token' => fake()->uuid(), 'status' => 'ACTIVE']);
     CartItem::create(['cart_id' => $cart->id, 'product_variant_id' => $variant->id, 'quantity' => 2]);
-    $this->withHeader('X-Guest-Cart-Token', $cart->guest_token)->postJson('/api/v1/checkout/quote', ['destination_area_id' => 'destination', 'service' => 'REG'] + cartRegion($province, $city))
-        ->assertOk()->assertJsonPath('data.shipping.provider', 'GUTSHOES_REGIONAL')->assertJsonPath('data.shipping.service', 'REGIONAL_PER_ITEM')->assertJsonPath('data.pricing.shipping_fee', $expected);
-})->with([
-    'Jawa Barat di luar Jabodetabek' => ['Jawa Barat', 'Bandung', '40000.00'],
-    'Sumatera' => ['Sumatera Utara', 'Medan', '60000.00'],
-    'Kalimantan' => ['Kalimantan Timur', 'Balikpapan', '80000.00'],
-    'Sulawesi' => ['Sulawesi Selatan', 'Makassar', '80000.00'],
-]);
+
+    $this->withHeader('X-Guest-Cart-Token', $cart->guest_token)
+        ->postJson('/api/v1/checkout/quote', ['service' => 'REG'] + cartRegion('Sumatera Utara', 'Medan'))
+        ->assertOk()
+        ->assertJsonPath('data.shipping.provider', 'FAKE')
+        ->assertJsonPath('data.pricing.shipping_fee', '20000.00');
+});
+
+it('limits cart quantity using available stock instead of a fixed cap', function () {
+    $variant = ProductVariant::factory()->create();
+    Inventory::factory()->create(['product_variant_id' => $variant->id, 'on_hand' => 40, 'reserved' => 5]);
+
+    $created = $this->postJson('/api/v1/cart/items', ['variant_id' => $variant->id, 'quantity' => 30])
+        ->assertCreated()
+        ->assertJsonPath('data.items.0.quantity', 30);
+
+    $this->withHeader('X-Guest-Cart-Token', $created->json('data.guest_token'))
+        ->patchJson('/api/v1/cart/items/'.$created->json('data.items.0.id'), ['quantity' => 36])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('quantity');
+});
+
+it('maps internal regions to the provider area id on the server', function () {
+    config(['gutshoes.shipping_driver' => 'biteship', 'services.biteship.api_key' => 'secret']);
+    Http::fake(['*/v1/maps/areas*' => Http::response(['areas' => [['id' => 'ID-BITESHIP-12345', 'postal_code' => 12345, 'administrative_division_level_3_name' => 'Test']]])]);
+    $address = app(RegionAddressResolver::class)->resolve(cartRegion('DKI Jakarta', 'Jakarta Selatan') + [
+        'postal_code' => '12345',
+        'provider_area_id' => 'client-value-must-not-be-used',
+    ]);
+
+    expect($address['provider_area_id'])->toBe('ID-BITESHIP-12345');
+    Http::assertSent(fn ($request) => $request->hasHeader('Authorization', 'secret') && str_contains($request->url(), '/v1/maps/areas'));
+});

@@ -27,7 +27,7 @@ function cancellableOrder(string $status): array
         app(InventoryService::class)->reserve($inventory, $order, 1);
     }
     if ($status === 'PAID') {
-        Payment::create(['order_id' => $order->id, 'provider' => 'MIDTRANS', 'provider_transaction_id' => 'mid-'.$order->id, 'status' => 'SETTLEMENT',
+        Payment::create(['order_id' => $order->id, 'provider' => 'MIDTRANS', 'provider_transaction_id' => 'mid-'.$order->id, 'status' => 'SUCCESS', 'provider_status' => 'settlement',
             'amount' => '120000.00', 'currency' => 'IDR', 'expires_at' => now()->addDay(), 'paid_at' => now()]);
     }
 

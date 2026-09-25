@@ -64,6 +64,26 @@ class HttpMidtransProvider implements MidtransProvider
         return $payload;
     }
 
+    public function getStatus(Order $order): ?array
+    {
+        $response = Http::withBasicAuth((string) config('services.midtrans.server_key'), '')
+            ->acceptJson()
+            ->timeout(10)
+            ->get(rtrim((string) config('services.midtrans.api_url'), '/').'/'.rawurlencode($order->order_number).'/status');
+
+        if ($response->status() === 404 || (string) $response->json('status_code') === '404') {
+            return null;
+        }
+
+        $response->throw();
+        $payload = $response->json();
+        if (! is_array($payload) || ! isset($payload['transaction_status'])) {
+            throw new RuntimeException('Invalid Midtrans status response.');
+        }
+
+        return $payload;
+    }
+
     public function verifyWebhook(array $payload): bool
     {
         $expected = hash('sha512', ($payload['order_id'] ?? '').($payload['status_code'] ?? '').($payload['gross_amount'] ?? '').config('services.midtrans.server_key'));

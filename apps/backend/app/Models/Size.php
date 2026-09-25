@@ -5,6 +5,7 @@ namespace App\Models;
 use Database\Factories\SizeFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Size extends Model
@@ -15,4 +16,10 @@ class Size extends Model
     protected $guarded = [];
 
     protected $table = 'sizes';
+
+    /** @return HasMany<ProductVariant, $this> */
+    public function variants(): HasMany
+    {
+        return $this->hasMany(ProductVariant::class);
+    }
 }

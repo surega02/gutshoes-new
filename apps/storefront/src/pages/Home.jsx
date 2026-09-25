@@ -4,17 +4,11 @@ import ProductCard from "../components/catalog/ProductCard";
 import Button from "../components/ui/Button";
 import Icon from "../components/ui/Icon";
 
-function Home({navigate, openProduct, products, loading, error, retry}) {
-  const categories = [
-    ...new Map(
-      products.flatMap((product) =>
-        product.categories.map((category) => [
-          category.slug,
-          {...category, image: product.image},
-        ]),
-      ),
-    ).values(),
-  ];
+function Home({catalogCategories, navigate, openProduct, products, loading, error, retry}) {
+  const categories = catalogCategories.map((category) => ({
+    ...category,
+    image: products.find((product) => product.categories.some((item) => item.slug === category.slug))?.image,
+  }));
 
   return (
     <main>
@@ -35,7 +29,7 @@ function Home({navigate, openProduct, products, loading, error, retry}) {
       {!loading && !error && categories.length > 0 && (
         <section className="category-strip" aria-label="Belanja berdasarkan aktivitas">
           {categories.slice(0, 6).map((category) => (
-            <button key={category.slug} onClick={() => navigate("catalog", {filter: category.name})}>
+            <button key={category.slug} onClick={() => navigate("catalog", {filter: category.slug})}>
               {category.image ? <img src={category.image} alt="" /> : <span className="product-image-placeholder" aria-hidden="true" />}
               <span>
                 <strong>{category.name}</strong>

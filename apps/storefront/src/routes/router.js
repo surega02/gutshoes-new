@@ -5,7 +5,7 @@ const STOREFRONT_PAGES = new Set([
 ]);
 
 const ADMIN_SECTIONS = new Set([
-  "dashboard", "products", "catalog", "inventory", "orders",
+  "dashboard", "products", "catalog", "sizes", "inventory", "orders",
   "customers", "promotions", "settings", "audit",
 ]);
 
@@ -29,6 +29,7 @@ const ADMIN_TITLES = {
   dashboard: "Dashboard",
   products: "Produk",
   catalog: "Katalog",
+  sizes: "Ukuran",
   inventory: "Inventaris",
   orders: "Pesanan",
   customers: "Pelanggan",

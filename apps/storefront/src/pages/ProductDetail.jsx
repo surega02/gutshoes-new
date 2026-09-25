@@ -5,11 +5,18 @@ import Feedback from "../components/ui/Feedback";
 import Icon from "../components/ui/Icon";
 import ProductCard from "../components/catalog/ProductCard";
 
-function ProductDetail({product, products, addToCart, navigate, loading, error, retry}) {
+import {useProduct} from "../lib/useCatalog";
+
+function ProductDetail({slug, products, addToCart, navigate}) {
+  const {product, loading, error: requestError, retry} = useProduct(slug);
+  const error = requestError?.status === 404 ? "" : requestError?.message;
   const [size, setSize] = useState(null);
   const [notice, setNotice] = useState("");
   const [activeImage, setActiveImage] = useState(0);
   const pointerStart = useRef(null);
+  useEffect(() => {
+    document.title = product ? `${product.name} — GutShoes` : "Detail produk — GutShoes";
+  }, [product?.name]);
   useEffect(() => {
     setActiveImage(0);
     setSize(null);

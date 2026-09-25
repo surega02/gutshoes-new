@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Payment\HttpMidtransProvider;
+use App\Domain\Payment\ReconcileMidtransPayment;
 use App\Models\Payment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -46,6 +47,47 @@ it('recovers paid status without creating a new token', function () {
     $this->artisan('midtrans:sandbox-recover '.$order->order_number)->assertSuccessful();
     expect($order->refresh()->getRawOriginal('status'))->toBe('PAID');
     Http::assertSentCount(1);
+});
+
+it('reconciles a missing settlement webhook idempotently through GET Status', function () {
+    ['order' => $order, 'inventory' => $inventory] = payableOrder();
+    Payment::create(['order_id' => $order->id, 'provider' => 'MIDTRANS', 'status' => 'PENDING',
+        'amount' => $order->grand_total, 'currency' => 'IDR', 'expires_at' => $order->expires_at,
+        'initialization_state' => 'uncertain']);
+    Http::fake(['*/status' => Http::response(midtransPayload($order, 'settlement'))]);
+
+    $service = app(ReconcileMidtransPayment::class);
+    $service->reconcile($order);
+    $service->reconcile($order);
+
+    expect($order->refresh()->getRawOriginal('status'))->toBe('PAID')
+        ->and($order->payment->refresh()->status)->toBe('SUCCESS')
+        ->and($order->payment->provider_status)->toBe('settlement')
+        ->and($inventory->refresh()->reserved)->toBe(0)
+        ->and($inventory->sold)->toBe(1);
+    expect($order->statusHistories()->where('to_status', 'PAID')->count())->toBe(1);
+    Http::assertSentCount(2);
+});
+
+it('uses GET Status to repair provider state after an out-of-order webhook', function () {
+    ['order' => $order, 'inventory' => $inventory] = payableOrder();
+    Payment::create(['order_id' => $order->id, 'provider' => 'MIDTRANS', 'status' => 'PENDING',
+        'amount' => $order->grand_total, 'currency' => 'IDR', 'expires_at' => $order->expires_at,
+        'initialization_state' => 'ready', 'snap_token' => 'snap-test']);
+    $this->postJson('/api/v1/payments/midtrans/webhook', midtransPayload($order, 'settlement'))->assertOk();
+    $latePending = midtransPayload($order, 'pending');
+    $latePending['transaction_time'] = '2026-08-22 12:00:00';
+    $this->postJson('/api/v1/payments/midtrans/webhook', $latePending)->assertOk();
+    expect($order->payment->refresh()->status)->toBe('SUCCESS')
+        ->and($order->payment->provider_status)->toBe('pending');
+
+    Http::fake(['*/status' => Http::response(midtransPayload($order, 'settlement'))]);
+    app(ReconcileMidtransPayment::class)->reconcile($order);
+
+    expect($order->payment->refresh()->status)->toBe('SUCCESS')
+        ->and($order->payment->provider_status)->toBe('settlement')
+        ->and($inventory->refresh()->sold)->toBe(1);
+    expect($order->statusHistories()->where('to_status', 'PAID')->count())->toBe(1);
 });
 
 it('does not release a Snap session just because its last attempt was denied', function () {
