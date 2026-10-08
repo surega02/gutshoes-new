@@ -19,6 +19,7 @@ return [
         'url' => env('RAJAONGKIR_URL', 'https://rajaongkir.komerce.id/api/v1'),
         'api_key' => env('RAJAONGKIR_API_KEY'),
         'couriers' => env('RAJAONGKIR_COURIERS', 'jne:sicepat:jnt:ninja:tiki:anteraja:pos'),
+        'timeout' => (int) env('RAJAONGKIR_TIMEOUT', 30),
     ],
 
     'google' => [

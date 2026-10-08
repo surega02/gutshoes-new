@@ -11,7 +11,7 @@ class RajaOngkirShippingProvider implements ShippingProvider
     {
         $response = Http::baseUrl((string) config('services.rajaongkir.url'))
             ->withHeaders(['key' => (string) config('services.rajaongkir.api_key')])
-            ->asForm()->timeout(10)->retry(2, 200)
+            ->asForm()->connectTimeout(10)->timeout((int) config('services.rajaongkir.timeout', 30))->retry(2, 500)
             ->post('/calculate/domestic-cost', [
                 'origin' => $origin['provider_area_id'],
                 'destination' => $destination['provider_area_id'],

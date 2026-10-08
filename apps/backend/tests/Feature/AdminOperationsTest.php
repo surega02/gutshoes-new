@@ -88,7 +88,7 @@ it('returns customer operational detail and updates the shipping origin', functi
 
     $this->actingAs($admin)->putJson('/api/v1/admin/warehouse', [
         'name' => 'Gudang Utama', 'phone' => '08123456789', 'address_line' => 'Jl. Contoh 1',
-        'province' => 'DKI Jakarta', 'city' => 'Jakarta Selatan', 'district' => 'Kebayoran Baru',
+        'province' => 'DKI Jakarta', 'city' => 'Jakarta Selatan', 'district' => 'Kebayoran Baru', 'subdistrict' => 'Gunung',
         'postal_code' => '12110', 'provider_area_id' => 'IDNP6IDNC148IDND836IDZ12110',
     ])->assertOk()->assertJsonPath('data.name', 'Gudang Utama');
 

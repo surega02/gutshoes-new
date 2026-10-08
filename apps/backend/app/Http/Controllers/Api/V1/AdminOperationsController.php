@@ -113,7 +113,7 @@ class AdminOperationsController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'], 'phone' => ['nullable', 'string', 'max:32'],
             'address_line' => ['required', 'string', 'max:500'], 'province' => ['required', 'string', 'max:255'],
-            'city' => ['required', 'string', 'max:255'], 'district' => ['required', 'string', 'max:255'],
+            'city' => ['required', 'string', 'max:255'], 'district' => ['required', 'string', 'max:255'], 'subdistrict' => ['required', 'string', 'max:255'],
             'postal_code' => ['required', 'string', 'max:10'], 'provider_area_id' => ['required', 'string', 'max:255'],
         ]);
         $warehouse->update($data);

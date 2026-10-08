@@ -18,7 +18,7 @@ class CatalogDemoSeeder extends Seeder
     {
         $warehouse = Warehouse::updateOrCreate(
             ['code' => 'JKT-DEV-01'],
-            ['name' => 'Gudang Development Jakarta', 'phone' => '02100000000', 'address_line' => 'Jakarta', 'province' => 'DKI Jakarta', 'city' => 'Jakarta Selatan', 'district' => 'Kebayoran Baru', 'postal_code' => '12120', 'is_active' => true],
+            ['name' => 'Gudang Development Jakarta', 'phone' => '02100000000', 'address_line' => 'Jakarta', 'province' => 'DKI Jakarta', 'city' => 'Jakarta Selatan', 'district' => 'Kebayoran Baru', 'subdistrict' => 'Gunung', 'postal_code' => '12120', 'provider_area_id' => '17538', 'is_active' => true],
         );
 
         $catalog = [

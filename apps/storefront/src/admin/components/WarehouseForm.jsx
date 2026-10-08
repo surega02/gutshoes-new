@@ -25,7 +25,7 @@ export default function WarehouseForm({warehouse, reload}) {
       <h2>Asal pengiriman</h2>
       <p>Data ini dipakai untuk tarif dan pemrosesan logistik.</p>
       <div className="adm-form-grid">
-        {["name","phone","address_line","district","city","province","postal_code","provider_area_id"].map((key) =>
+        {["name","phone","address_line","subdistrict","district","city","province","postal_code","provider_area_id"].map((key) =>
           <label key={key}>{key.replaceAll("_", " ")}<input name={key} defaultValue={warehouse[key] || ""} required={key !== "phone"} /></label>
         )}
       </div>
