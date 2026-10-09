@@ -15,6 +15,7 @@ apps/backend/public/build/
 apps/*/.env
 apps/*/.env.*
 !apps/*/.env.example
+!apps/storefront/.env.staging.example
 
 # Laravel runtime
 apps/backend/storage/*.key
