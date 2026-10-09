@@ -12,10 +12,13 @@ apps/backend/public/build/
 .env
 .env.*
 !.env.example
-apps/*/.env
-apps/*/.env.*
-!apps/*/.env.example
-!apps/storefront/.env.staging.example
+!.env.*.example
+
+# Local databases and exported backups
+*.sqlite
+*.sqlite3
+*.sql
+*.dump
 
 # Laravel runtime
 apps/backend/storage/*.key

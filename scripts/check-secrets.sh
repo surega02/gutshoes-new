@@ -3,9 +3,9 @@ set -eu
 
 blocked_files='(^|/)(\.env($|\.)|auth\.json$|credentials\.json$|service-account.*\.json$|client-secret.*\.json$|google-services\.json$|GoogleService-Info\.plist$|id_rsa($|\.)|id_ed25519($|\.)|secrets/)|\.(pem|key|p12|pfx|jks|keystore|sql|dump)$'
 tracked_files="$(git ls-files)"
-if printf '%s\n' "$tracked_files" | grep -E "$blocked_files" | grep -Ev '(^|/)\.env\.example$' >/dev/null 2>&1; then
+if printf '%s\n' "$tracked_files" | grep -E "$blocked_files" | grep -Ev '(^|/)\.env(\.[^/]+)*\.example$' >/dev/null 2>&1; then
   echo 'Secret scan gagal: file sensitif terlacak.' >&2
-  printf '%s\n' "$tracked_files" | grep -E "$blocked_files" | grep -Ev '(^|/)\.env\.example$' >&2 || true
+  printf '%s\n' "$tracked_files" | grep -E "$blocked_files" | grep -Ev '(^|/)\.env(\.[^/]+)*\.example$' >&2 || true
   exit 1
 fi
 
